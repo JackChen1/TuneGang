@@ -1,0 +1,3311 @@
+﻿'USEUNIT RunQSOO
+'USEUNIT HelpCommands
+'USEUNIT QSOOCommCommands
+'USEUNIT CONN
+'USEUNIT SUP
+'USEUNIT OutlineCommands
+'USEUNIT SqlServerClass
+'USEUNIT CommonFunc
+'USEUNIT FileUtils
+'USEUNIT DevGridClass
+'USEUNIT DevTreeClass
+'USEUNIT Preference
+'USEUNIT QSOOCommonFunc
+'USEUNIT OUT
+'USEUNIT ComboBoxEditClass
+'USEUNIT SendMail
+'USEUNIT AJMS_INIFile
+'USEUNIT QSOO_Installer
+'USEUNIT LookUpEditClass
+'USEUNIT PopToolClass
+'USEUNIT XMLFile
+'USEUNIT LogClass
+'USEUNIT SCNAddJob
+'USEUNIT CommonConst
+'USEUNIT SCN_Command
+'USEUNIT SCN_Group
+'USEUNIT INS_AddJob
+'USEUNIT Check_INS_AddJob
+'USEUNIT INS_Common
+'USEUNIT TOAD
+'USEUNIT BOP_Batch
+'USEUNIT PublicVariableConst
+'USEUNIT BOP_Control
+
+Option Explicit
+
+'Const Button Name
+Private Const OptCurrent="Optimizer Job Current"
+Private Const OptAll="Optimizer Job All"
+Private Const OptSelected="Optimizer Job Selected"
+Private Const BTNOptAll="btnScanAll"
+Private Const BTNOptCurrent="btnScanCurrent"
+Private Const BTNOptSelected="btnScanSelected"
+Private Const BTNInpAll="btnNextUserAction_InputBindVar"
+Private Const BTNInpCurrent="btnInputBindVariables_Current"
+Private Const BTNInpSelected="btnInputBindVar_Selected"
+Private Const BTNInpMenu="mnJobInputVar_Current"
+Private Const BTNOptMenu="btnScanMenu"
+Private Const BTNOptScript="btnReturnJob"
+Private Const MMUOptScript="btnNextUserAction_GenerateRepScript"
+Private Const BTNQReport="btnQueueJobReport"
+Private Const BTNSReport="btnQueueSummaryReport"
+Private Const BTNExAll="btnSQLExecuteList"
+Private Const BTNExSelected="btnSQLExecuteList"
+Private Const BTNExCurrent="btnSQLExecuteList"
+Private Const BTNSQLOpAll="btnSQLOptimizeAll"
+Private Const BTNSQLOpSelected="btnSQLOptimizeSelected"
+Private Const BTNSQLOpCurrent="btnSQLOptimzeCurrent"
+Private Const BTNAbortAll="btnAbortAll"
+Private Const BTNAbortCurrent="btnAbortScanCurrent"
+Private Const BTNInputBindVar="btnSQLInputBindVar" 
+'Const Column Name
+Private Const COLOwner="colObjectOwner"
+Private Const COLName="colObjectName"
+Private Const COLSelected="Selected"
+Private Const COLSelectedJob="Selected Job"
+Private Const COLSelectedSQL="Selected SQL"
+Private Const COLJobStatus="Job Status"
+Private Const COLBatchName="colGroupName"
+Private Const COLBatchStatus="colGroupStatus"
+Private Const COLSQLStatus="SQLStatus"
+Private SQLStatus
+Private Const COLSubName="colSubmittedBy"
+Private Const COLNoOptJob="colJobsNotOptimized"
+Private Const COLTotalJob="colTotalJobs"
+Private Const COLNoImpJob="colJobsWithNoImprovement"
+Private Const COLImpJob="colJobsWithImprovement"
+Private Const COLSimSQL="Simple SQL"
+Private Const COLProSQL="Problematic SQL"
+Private Const COLComSQL="Complex SQL"
+Private Const COLInvSQL="Invalid SQL"
+Private Const COLConnection="Connection"
+Private Const COLEConnection="colJobConnectionExe"
+Private Const COLSchema="Parsing Schema"
+Private Const COLESchema="colJobParsingSchemaExe"
+Private Const COLSQLClassification="SQLClassification"
+Private Const COLSQLName="colSQLName"
+Private Const COLJobName="colJobName"
+Private Const COLVarName="colVarName"
+Private Const COLNull="colIsNull"
+Private Const COLVarValue="colVarValue"
+Private Const SSQLName="SQLName"
+
+SQLStatus="SQL "&SCN_Translation("Status")
+
+'*****************************************************************************************************************
+'Function----------- BOP_SelectBatchNode
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- select batch node in left tree
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_SelectBatchNode(aDataID)
+    Call BOP_BatchListPageCtlSet()
+    Call BOP_JobListPageCtlSet()
+    Call Public_DlgSet()
+    
+    Dim aBatchName,aActionType,aJobName
+    Dim aBatchCount,aCBatchName,aBPlag,aJobCount,aJPlag
+    Dim i,k
+    Dim aOwnerName,aFileName
+
+'    Call CheckControlExist(grdBOPJobList,"BOP_SelectBatchNode","T","Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList") 
+'    If stopworkflow=False Then 
+'         Exit Sub 
+'    End If     
+    aActionType = ObjSS.GetSqlServerCell("BOP_SelectBatchNode",aDataID,"I_SelectionType")
+    aBatchName  = ObjSS.GetSqlServerCell("BOP_SelectBatchNode",aDataID,"I_BatchName")
+    aJobName    = ObjSS.GetSqlServerCell("BOP_SelectBatchNode",aDataID,"I_JobName")
+    aBatchName = Replace(aBatchName,"Batch List",BOP_Translation("Batch List"))
+    aBatchName = BOP_Translation(aBatchName)
+ 
+    Delay(20000)
+    Call CheckControlExist(trvBOPJobLeftList,"BOP_SelectBatchNode","T","Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trv_QueueTree")   
+    If stopworkflow=False Then 
+         Exit Sub 
+    End If    
+'    Comment by Lisa, no need to check this control again.
+'    If Exists(trvBOPJobLeftList)=False Then
+'        Call TCLog.LogMsg("Can not find the BatchNode tree object.","BOP_SelectBatchNode",5)
+'        stopWorkflow=False
+'        Exit Sub     
+'    End If
+'    
+'    Call CheckControlExist(trvBOPJobLeftList,"BOP_SelectBatchNode","T","Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trv_QueueTree") 
+'    If stopworkflow=False Then 
+'         Exit Sub 
+'    End If 
+
+'    Call SelectNode2(trvBOPJobLeftList,BOP_Translation("Batch List"),0,"QSOO")    
+    
+    If btnQSOOOKInMsgDialog.Exists=True Then
+        TCLog.ScreenShot("Display error dialog")
+        Call TCLog.LogMsg("Click 'OK' button.","BOP_SelectBatchNode",3)
+        Call btnQSOOOKInMsgDialog.Click()  
+    End If
+    
+    Select Case aActionType
+        Case "SelectBatchNode"
+            If (trvBOPJobLeftList.Exists = True) Then
+                If SelectNode2(trvBOPJobLeftList,aBatchName,0,"QSOO")<> True Then 
+                    Call TCLog.LogMsg("Select Batch File : " & DoString2(aBatchName) & " Failed","BOP_SelectBatchNode",5)
+                    stopWorkflow=False
+                    Exit Sub
+                Else
+                    Call TCLog.LogMsg("Select Batch : " & DoString2(aBatchName) & " Sucessfully!","BOP_SelectBatchNode",3)
+                End If
+            Else
+                Call TCLog.LogMsg("The Batch List Tree Does not exists,Can't Select Batc: " & aBatchName,"BOP_SelectBatchNode",5)
+                stopWorkflow=False
+                Exit Sub 
+            End If
+        Case "DubleClick" 
+            If (trvBOPJobLeftList.Exists = True) Then
+                Call SelectNode2(trvBOPJobLeftList,aBatchName,0,"QSOO")
+            Else
+                Call TCLog.LogMsg("The Batch List Tree Does not exist,Can't Select Batch: " & DoString2(aBatchName),"BOP_SelectBatchNode",5)
+                stopWorkflow=False
+                Exit Sub 
+            End If
+            Call CheckControlExist(grdBOPBatchList,"BOP_SelectBatchNode","T","Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grdctl_gridGroupList")
+            If grdBOPBatchList.exists Then
+                aBatchCount = grdBOPBatchList.DefaultView.RowCount
+                For i=0 To aBatchCount-1
+                    grdBOPBatchList.DefaultView.DataController.CurrentControllerRow = i
+                    Call Sys.Refresh
+                    aCBatchName = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLBatchName)
+                    If StrComp(aCBatchName,aBatchName)=0 Then
+                        aBPlag=aBPlag+1
+                        Call TCLog.LogMsg("Sucess Select Batch: " & DoString2(aCBatchName),"BOP_SelectBatchNode",3)
+                        Exit For
+                    End If           
+                Next
+                'judge the Batch name whether exists 
+                If aBPlag=0 Then
+                    Call TCLog.LogMsg("The Job:" & DoString2(aJobName) & " Does not exists!","BOP_SelectBatchNode",5) 
+                    stopWorkflow=False
+                    Exit Sub
+                End If
+                'dubleclick batch
+                Call grdBOPBatchList.DblClick
+            Else
+                Call TCLog.LogMsg("The Batch List Panel Does not exist!,can't select any job" ,"BOP_SelectBatchNode",5)
+            End If
+            If aJobName= "" Then
+                Call TCLog.LogMsg("Sucess Select Batch Node: " & DoString2(aBatchName),"BOP_SelectBatchNode",3)
+                Exit Sub
+            Else
+                aJobCount = grdBOPJobList.DefaultView.RowCount
+                For k=0 To aJobCount-1
+                    If grdBOPJobList.Exists Then  
+                        grdBOPJobList.DefaultView.DataController.CurrentControllerRow = K
+                        aOwnerName = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLOwner)
+                        aFileName  = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLName)
+                        If StrComp((aOwnerName & " \" & aFileName),aJobName)=0 Then
+                            aJPlag=aJPlag+1
+                            Exit For
+                        End If 
+                    Else
+                        Call TCLog.LogMsg("The Job List Panel Does not exist!,can't select any job" ,"BOP_SelectBatchNode",5)
+                    End If
+                Next
+                If aJPlag=0 Then
+                    Call TCLog.LogMsg("The Job:" & DoString2(aJobName) & " Does not exists!","BOP_SelectBatchNode",5) 
+                    stopWorkflow=False
+                    Exit Sub
+                End If
+                Call grdBOPJobList.DblClick
+                Delay(30000)
+                If grdBOPJobList.Enabled Then
+                    Call TCLog.LogMsg("Sucess Select Batch Node: " & DoString2(aBatchName) & " \" & DoString2((aOwnerName & "\" & aFileName)) ,"BOP_SelectBatchNode",3)
+                Else
+                    Call TCLog.LogMsg("Select Batch Node: " & DoString2(aBatchName) & " \" & DoString2((aOwnerName & "\" & aFileName)) & " Failed","BOP_SelectBatchNode",5)
+                    stopWorkflow=False
+                    Exit Sub 
+                End If   
+            End If 
+    End Select       
+    
+    If Exists(frmQSOOMsgDialog)=True Then 
+        Call btnQSOONOInMsgDialog.Click()
+    End If 
+    Delay(50000)
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_OptimizerJob
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- optimizer a job by click button or right click for selecting optimizer 
+'Call by------------ 
+'****************************************************************************************************************** 
+Sub BOP_OptimizerJob(aDataID)
+    Call BOP_JobListPageCtlSet()
+    Call Public_DlgSet()
+    Delay(5000) 
+    
+    Dim aActionType,J
+    
+    aActionType = ObjSS.GetSqlServerCell("BOP_OptimizerJob",aDataID,"I_ActionType")
+    
+    Select Case aActionType
+        Case "Button" 
+            If CheckToolButtonState(barBOPBatchHeader,BTNOptMenu)=True Then
+'                Call ObjPOP.ClickToolBarButton(barBOPBatchHeader,"btnScanMenu")
+                Call ObjPOP.ClickToolBarButton(barBOPBatchHeader,BTNOptMenu)
+                Call CheckQSOOPass
+                Delay(3000)
+                Sys.Refresh
+                If Exists(frmQSOOMsgDialog)=True Then
+                    If (btnQSOOYESInMsgDialog.Enabled = True) Then
+                        Call btnQSOOYESInMsgDialog.click()
+                    ElseIf (btnQSOOOKInMsgDialog.Enabled = True) Then
+                        Call TCLog.LogMsg("The Unexpect Error occured,Can't Continue to Optimize","BOP_OptimizerJob",5)
+                        Call btnQSOOOKInMsgDialog.click()
+                        bSuccess=0
+                        stopWorkflow=False
+                        Exit Sub              
+                    End If      
+                End If 
+                Delay(5000)
+                BOP_ProgressBarCtlSet()
+                barBOPProcessBar.RefreshMappingInfo
+                If barBOPProcessBar.VisibleOnScreen = True Then
+                    Call TCLog.LogMsg("Click [Optimize Job] button!","BOP_OptimizerJob",3)
+                Else
+'                    Call barBOPBatchHeader.ClickItem("Optimize Job")
+'                    Call TCLog.LogMsg("Use another way to Click [Optimize Job] button!","BOP_OptimizerJob",3)
+'                    Call CheckQSOOPass
+'                    Delay(3000)
+'                    Sys.Refresh
+'                    If Exists(frmQSOOMsgDialog)=True Then
+'                        If (btnQSOOYESInMsgDialog.Enabled = True) Then
+'                            Call btnQSOOYESInMsgDialog.click()
+'                        ElseIf ( btnQSOOOKInMsgDialog.Enabled = True) Then
+'                            Call TCLog.LogMsg("The Unexpect Error occured,Can't Continue to Optimize","BOP_OptimizerJob",5)
+'                            Call btnQSOOOKInMsgDialog.click()
+'                            bSuccess=0
+'                            stopWorkflow=False
+'                            Exit Sub              
+'                        End If      
+'                    End If
+                End If         
+            Else
+                bSuccess=0
+                Call TCLog.LogMsg("The Optimizer Button is Dim","BOP_OptimizerJob",5)
+            End If
+        Case "PopupMenu"
+            Call TCLog.LogMsg("RightClick to Optimizer Job","BOP_OptimizerJob",3)
+            Call grdBOPJobList.ClickR(grdBOPJobList.QA_GetFocusedRowPositionX,grdBOPJobList.QA_GetFocusedRowPositionY)
+            '      J=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.DefaultView.DataController.get_CurrentControllerRow
+            '      Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.ClickCellR(J,COLJobStatus)
+            Call Sys.Desktop.Keys("[Down]")
+            Call Sys.Desktop.Keys("[Enter]")
+            'select Optimiztion type
+            '      if ObjPOP.ClickPopUpMenu(Aliases.QSOO.QSOO_popBar_PopControl,BTNOptCurrent)=True then 
+            '        call TCLog.LogMsg("Sucess to click [Optimize Job] from PopupMenu","BOP_GenerateOptimizedScript",3)
+            '      else
+            '        call TCLog.LogMsg("The [Optimize Job] button is Dim,Fail to click Optimize Current from PopupMenu","BOP_GenerateOptimizedScript",5)
+            '      end if     
+            Delay(3000)
+            Sys.Refresh
+            Call CheckQSOOPass
+        
+            If (frmQSOOMsgDialog.Exists = True) Then
+                If (btnQSOOYESInMsgDialog.Enabled = True) Then
+                    Call btnQSOOYESInMsgDialog.click()
+                ElseIf ( btnQSOOOKInMsgDialog.Enabled = True) Then
+                    Call TCLog.LogMsg("The Unexpect Error occured,Can't Continue to Optimize","BOP_OptimizerJob",5)
+                    Call btnQSOOOKInMsgDialog.click()
+                    bSuccess=0
+                    stopWorkflow=False
+                    Exit Sub              
+                End If      
+            End If
+            Delay(3000) 
+        
+    End Select
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_OptimizerSQL
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- optimizer a SQL by click button or right click for selecting optimizer 
+'Call by------------ 
+'******************************************************************************************************************
+Sub BOP_OptimizerSQL(aDataID)
+    
+    Dim aActionType,J
+    aActionType=ObjSS.GetSqlServerCell("BOP_OptimizerSQL",aDataID,"I_ActionType")
+    Call BOP_SQLListPageCtlSet()
+    Select Case aActionType
+        Case "Button" 
+            If CheckToolButtonState(SQLListToolBar,"btnSQLOptimizePullDown")=True Then
+'                Call SQLListToolBar.ClickItem("Optimize")
+                Call ObjPOP.ClickToolBarButton(SQLListToolBar,"btnSQLOptimizePullDown")
+                Delay(3000)
+                Call CheckQSOOPass
+                Delay(3000)
+                Sys.Refresh
+                Call Public_DlgSet()
+                If (frmQSOOMsgDialog.Exists = True) Then
+                    If (btnQSOOYESInMsgDialog.Enabled = True) Then
+                        Call btnQSOOYESInMsgDialog.click 
+                    ElseIf (btnQSOOOKInMsgDialog.Enabled = True) Then
+                        Call btnQSOOOKInMsgDialog.click
+                        Call TCLog.LogMsg("The Unexpect Error occured,Can't Continue to Optimize","BOP_OptimizerSQL",5)
+                        bSuccess=0
+                        stopWorkflow=False
+                        Exit Sub              
+                    End If      
+                End If   
+                BOP_ProgressBarCtlSet()
+                If barBOPProcessBar.VisibleOnScreen = True Then
+                    Call TCLog.LogMsg("Click [Optimize SQL] button!","BOP_OptimizerSQL",3)
+                Else
+                    Call SQLListToolBar.ClickItem("Optimize")
+                    Call TCLog.LogMsg("Use another way to Click [Optimize SQL] button!","BOP_OptimizerSQL",3)
+                    Call CheckQSOOPass
+                    Delay(3000)
+                    Sys.Refresh
+                    If Exists(frmQSOOMsgDialog)=True Then
+                        If (btnQSOOYESInMsgDialog.Enabled = True) Then
+                            Call btnQSOOYESInMsgDialog.click()
+                        ElseIf ( btnQSOOOKInMsgDialog.Enabled = True) Then
+                            Call btnQSOOOKInMsgDialog.click()
+                            Call TCLog.LogMsg("The Unexpect Error occured,Can't Continue to Optimize","BOP_OptimizerSQL",5)
+                            bSuccess=0
+                            stopWorkflow=False
+                            Exit Sub              
+                        End If      
+                    End If  
+                End If      
+            Else
+                bSuccess=0
+                Call TCLog.LogMsg("The [Optimizer] Button is Dim","BOP_OptimizerSQL",5)
+            End If
+        Case "PopupMenu"
+            Call TCLog.LogMsg("RightClick to Optimizer Job","BOP_OptimizerSQL",3)
+            J = grdBOPSQLList.DefaultView.DataController.get_CurrentControllerRow
+            Call grdBOPSQLList.ClickCellR(j,SQLStatus)
+            'select Optimiztion type
+            Call Sys.Desktop.Keys("[Down]")
+            Call Sys.Desktop.Keys("[Enter]")
+            Delay(3000)
+            Sys.Refresh
+            Call CheckQSOOPass
+            Call Public_DlgSet()
+            If (frmQSOOMsgDialog.Exists = True) Then
+                If (btnQSOOYESInMsgDialog.Enabled = True) Then
+                    Call btnQSOOYESInMsgDialog.click 
+                ElseIf (btnQSOOOKInMsgDialog.Enabled = True) Then
+                    Call btnQSOOOKInMsgDialog.click
+                    Call TCLog.LogMsg("The Unexpect Error occured,Can't Continue to Optimize","BOP_OptimizerSQL",5)
+                    bSuccess=0
+                    stopWorkflow=False
+                    Exit Sub              
+                End If      
+            End If
+            Delay(3000) 
+    End Select
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_SelectJob
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- select a job at batch node tree
+'Call by------------ 
+'****************************************************************************************************************** 
+Sub BOP_SelectJob(aDataID)
+    
+    Dim i,aRowCount,aJobName,aPlag,k
+    Dim aOwnerName,aFileName,aJobStatus,aPrSQL,aSiSQL,aCoSQL,aInSQL
+    
+    'select one or more job
+    'for k=0 to GetCSVCount(aDataID)-1
+    aJobName=ObjSS.GetSqlServerCell("BOP_SelectJob",aDataID,"I_JobName")
+    aPlag=0
+    
+    Call BOP_JobListPageCtlSet()
+
+    aRowCount = grdBOPJobList.DefaultView.RowCount
+    Select Case aJobName
+        Case "*"
+        'comment by lisa, changed the method too select all job in job list grid
+'        p1.Keys("^a")
+'        For i=0 To aRowCount-1
+'            If p1.Exists Then
+'                p1.DefaultView.DataController.CurrentControllerRow=I
+'                aOwnerName=p1.DefaultView.DataController.GetCurrentRowValue_3(COLOwner)
+'                aFileName=p1.DefaultView.DataController.GetCurrentRowValue_3(COLName)
+'                Call P1.ClickRowIndicator(i)
+'                Call TCLog.LogMsg("Sucessed to Selected Job" & DoString2((aOwnerName & "\" & aFileName)) ,"BOP_SelectJob",3)
+'            Else
+'                bSuccess=0
+'                Call TCLog.LogMsg("The Job List Panel Does not exist!,can't select any job" ,"BOP_SelectJob",5)
+'            End If  
+'        Next
+        
+          Call grdBOPJobList.ClickCellXY(0, "Path/Owner", 34, 12)
+          Call grdBOPJobList.ClickCellXY(aRowCount-1, "Path/Owner", 43, 12, skShift)
+        Case Else    
+        For i=0 To aRowCount-1
+            If grdBOPJobList.Exists Then
+                grdBOPJobList.DefaultView.DataController.CurrentControllerRow = i
+                aOwnerName = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLOwner)
+                aFileName  = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLName)
+'                If StrComp(UCase(Trim((aOwnerName & "\" & aFileName))),UCase(Trim(aJobName)))=0 Then
+                If StrComp(UCase(Trim((aFileName))),UCase(Trim(aJobName)))=0 Then
+                    Call grdBOPJobList.ClickRowIndicator(i)
+                    delay(2000)
+                    aPlag = aPlag+1
+                    Call TCLog.LogMsg("Sucessed to Select Job" & DoString2((aOwnerName & "\" & aFileName)) ,"BOP_SelectJob",3)
+                    Exit For
+                End If 
+            Else
+                bSuccess=0
+                Call TCLog.LogMsg("The Job List Panel Does not exist!,can't select any job" ,"BOP_SelectJob",5)
+            End If
+        Next 
+        If aPlag=0 Then
+            bSuccess=0
+            Call TCLog.LogMsg("The Job:" & DoString2(aJobName) & " Does not exists!","BOP_SelectJob",5) 
+            stopWorkflow=False
+            Exit Sub
+        End If
+    End Select
+    '  Next
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_SelectSQL
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- select a sql in a group job
+'Call by------------ 
+'****************************************************************************************************************** 
+Sub BOP_SelectSQL(aDataID)
+    
+    Delay(10000)
+    
+    Dim i,aRowCount,aSQLName,aPlag,k
+    Dim aOwnerName,aFileName,aJobStatus,aPrSQL,aSiSQL,aCoSQL,aInSQL
+    Call BOP_SQLListPageCtlSet()
+    'select one or more job
+    For k=0 To GetCSVCount(aDataID)-1
+        aSQLName=ObjSS.GetSqlServerCell("BOP_SelectSQL",GetCSVItem(aDataID,k),"I_SQLName")
+        aPlag=0 
+
+        aRowCount=grdBOPSQLList.DefaultView.RowCount
+        Select Case aSQLName
+            Case "*"
+            For i=0 To aRowCount-1
+                If grdBOPSQLList.Exists Then
+                    grdBOPSQLList.DefaultView.DataController.CurrentControllerRow = i
+                    aFileName = grdBOPSQLList.DefaultView.DataController.GetCurrentRowValue_3(SSQLName)
+                    Call grdBOPSQLList.DefaultView.DataController.set_CurrentControllerRow(i) 
+                    Call TCLog.LogMsg("Selected SQL Job: " & DoString2(aFileName) ,"BOP_SelectSQL",3)
+                Else
+                    Call TCLog.LogMsg("The SQL List Panel Does not exist!,can't select any job" ,"BOP_SelectSQL",5)
+                End If  
+            Next
+            Case Else    
+            For i=0 To aRowCount-1
+                If grdBOPSQLList.Exists Then 
+                    grdBOPSQLList.DefaultView.DataController.CurrentControllerRow = i
+                    aFileName = grdBOPSQLList.DefaultView.DataController.GetCurrentRowValue_3(SSQLName)
+                    If StrComp(aFileName,aSQLName)=0 Then
+                        Call grdBOPSQLList.DefaultView.DataController.set_CurrentControllerRow(i)
+                        aPlag = aPlag+1
+                        Call TCLog.LogMsg("Select SQL Job: " & DoString2((aFileName)) ,"BOP_SelectSQL",3)
+                        Exit For
+                    End If 
+                Else
+                    Call TCLog.LogMsg("The SQL List Panel Does not exist!,can't select any SQL" ,"BOP_SelectSQL",5)
+                End If
+            Next 
+            If aPlag=0 Then
+                Call TCLog.LogMsg("The SQL:" & DoString2(aSQLName) & " Does not exists!","BOP_SelectSQL",5) 
+                stopWorkflow=False
+                Exit Sub
+            End If
+        End Select
+    Next
+    
+    Delay(5000)
+    
+End Sub 
+'*****************************************************************************************************************
+'Function----------- BOP_BindVariable_OpenWindow
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- open a binvar window if a sql or job have bind variable
+'Call by------------ 
+'****************************************************************************************************************** 
+Sub BOP_BindVariable_OpenWindow(aDataID)
+    
+    Dim J,aActionType,aOpenType
+    aOpenType   = ObjSS.GetSqlServerCell("BOP_BindVariable_OpenWindow",aDataID,"I_OpenType")
+    aActionType = ObjSS.GetSqlServerCell("BOP_BindVariable_OpenWindow",aDataID,"I_OpenPlace")
+
+    Select Case aActionType
+        Case "JobList"
+            Call BOP_JobListPageCtlSet()
+            Select Case aOpenType 
+                Case "Button"
+                    If CheckToolButtonState(barBOPBatchHeader,BTNInpMenu)=True Then
+                        Call ObjPOP.ClickToolBarButton(barBOPBatchHeader,BTNInpMenu)
+                        Call TCLog.LogMsg("Click [Input Bind Variables] Button","BOP_BindVariable_OpenWindow",3)
+                    Else
+                        Call TCLog.LogMsg("The [Input Bind Variables] Button is Dim","BOP_BindVariable_OpenWindow",5)
+                    End If   
+                Case "PopupMenu"
+                    Call TCLog.LogMsg("Right Click to Input Bind Variables","BOP_BindVariable_OpenWindow",3)
+                    Call grdBOPJobList.ClickR(grdBOPJobList.QA_GetFocusedRowPositionX,grdBOPJobList.QA_GetFocusedRowPositionY)     
+                    Call Public_PopupSet()    
+                    If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNInpAll)=True Then 
+                        Call TCLog.LogMsg("Sucess to click [Input Bind Variables]  from PopupMenu","BOP_BindVariable_OpenWindow",3)
+                    Else
+                        Call TCLog.LogMsg("The Input Bind Variables All is Dim,Fail to click Input Bind Variables from PopupMenu","BOP_BindVariable_OpenWindow",5)
+                    End If
+            End Select
+        Case "SQL List"
+            Call BOP_SQLListPageCtlSet()
+            J = grdBOPSQLList.DefaultView.DataController.get_CurrentControllerRow
+            Call grdBOPSQLList.ClickCellR(J,"SQL "&SCN_Translation("Status"))
+            Call Public_PopupSet() 
+            If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNInputBindVar)=True Then 
+                Call TCLog.LogMsg("Sucess to click Input Bind Variables Current from PopupMenu","BOP_BindVariable_OpenWindow",3)
+            Else
+                Call TCLog.LogMsg("The Input Bind Variables Current button is Dim,Fail to click Input Bind Variables Current from PopupMenu","BOP_BindVariable_OpenWindow",5)
+            End If
+    End Select
+    
+    Call Sys.Refresh
+    Delay(3000)
+    Call Public_DlgSet()
+    If (frmQSOOMsgDialog.Exists = True) Then
+        If tboxQSOOMsgInMsgDialog.text="No bind variable needs to input into selected job(s)." Then
+            Call TCLog.LogMsg("The [No Binds Variable needs to Input Into Selected Job(s)] Information window prompted!","BOP_BindVariable_OpenWindow",3) 
+            Call btnQSOOOKInMsgDialog.click()
+            Call TCLog.LogMsg("No Binds Variable needs to Input Into Selected Job(s)","BOP_BindVariable_OpenWindow",3)
+        Else
+            Call TCLog.LogMsg("The Unexpected Window prompted!","BOP_BindVariable_OpenWindow",5)
+        End If
+    End If
+    
+    Call BOP_BindVarWinCtlSet()
+    If frmBOPBindVarWin.Exists = True Then
+        Call TCLog.LogMsg("Sucess to Open Input Bind Variables Window","BOP_BindVariable_OpenWindow",3)
+    Else
+        Call TCLog.LogMsg("Failed to Open Input Bind Variables Window","BOP_BindVariable_OpenWindow",5)
+        stopWorkflow=False
+    End If 
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_BindVariable_CheckPopulateSameValue
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- check some variable in bind variable form whether equal to the Variable in Data browser
+'Call by------------ 
+'****************************************************************************************************************** 
+Sub BOP_BindVariable_CheckPopulateSameValue()
+    
+    Dim aPopSameValue,aRowCount
+    Dim aBJobName,aBSQLName,aBVariableName,aDJobName,aDSQLName,aDVariableName,aCVarName
+    Dim i,k
+    Call BOP_BindVarWinCtlSet()
+
+    Call grdBOPInputBinVar.RefreshMappingInfo
+    'set the Bind Variable form layout
+    If Exists(grdBOPInputBinVar)Then
+        For k=0 To grdBOPInputBinVar.DefaultView.Columns.count-1
+            If grdBOPInputBinVar.DefaultView.Columns.Item_2(k).GroupIndex <>-1 Then
+                grdBOPInputBinVar.DefaultView.Columns.Item_2(k).Set_GroupIndex(-1)
+            End If
+            Delay(100)
+        Next
+    Else
+        Call TCLog.LogMsg("the Bind Variables Form does not exists","BOP_CheckPopulateSameValue",5) 
+        stopWorkflow=False
+        Exit Sub                                                    
+    End If 
+    aPopSameValue = chkBOPPopuSameValue.CheckState
+    
+    aRowCount = grdBOPInputBinVar.DefaultView.RowCount
+    'the job name is :All Jobs and SQL Name is All SQL While checked populate same value checkbox
+    If aPopSameValue="Checked" Then
+        For i=0 To aRowCount-1
+            grdBOPInputBinVar.DefaultView.DataController.CurrentControllerRow=i
+            Delay(1000)
+
+            '---check Job name
+            Dim StrCJobName
+            StrCJobName=TrimStr(lblBOPBVJobNameText.Text)
+            Call TCLog.LogMsg("The [Job Name] is : " & DoString2(StrCJobName) & " then Checked [Populate same value for the same variable name in all jobs] Checkbox","BOP_CheckPopulateSameValue",3)    
+            If StrComp(UCase(StrCJobName),UCase(TrimStr(BOP_Translation("All Jobs"))))=0 Then
+                Call TCLog.LogMsg("The [Job Name] Display correctly in [Selected Variable(s)] Panel Then Checked [Populate same value for the same variable name in all jobs] Checkbox","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The [Job Name] Display Incorrectly in [Selected Variable(s)] Panel Then Checked [Populate same value for the same variable name in all jobs] Checkbox","BOP_CheckPopulateSameValue",5) 
+            End If
+
+            '---check SQL Name
+            Dim StrcSQLName
+            StrcSQLName=TrimStr(lblBOPBVSQLNameText.Text)
+            Call TCLog.LogMsg("The [SQL name] is : " & DoString2(StrcSQLName) & " then Checked [Populate same value for the same variable name in all jobs] Checkbox","BOP_CheckPopulateSameValue",3)
+            If StrComp(UCase(StrcSQLName),UCase(TrimStr(BOP_Translation("All SQL"))))=0 Then
+                Call TCLog.LogMsg("The [SQL name] Display correctly in [Selected Variable(s)] Panel Then Checked [Populate same value for the same variable name in all jobs] Checkbox","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The [SQL name] Display Incorrectly in [Selected Variable(s)] Panel Then Checked [Populate same value for the same variable name in all jobs] Checkbox","BOP_CheckPopulateSameValue",5) 
+            End If
+            
+            '---check Variable name
+            aCVarName=grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLVarName)
+            Dim StrVabName
+            StrVabName=TrimStr(lblBOPBVVarNameText.Text)
+            Call TCLog.LogMsg("The [Variable Name] is : " & DoString2(StrVabName) & " then Checked [Populate same value for the same variable name in all jobs] Checkbox","BOP_CheckPopulateSameValue",3)
+            If StrComp(UCase(StrVabName),UCase(TrimStr(aCVarName)))=0 Then
+                Call TCLog.LogMsg("The [Variable Name] in [Bind Variable Form] is Corresponding to the [Variable Name] in [Selected Variable(s)] Panel","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The [Variable Name] in [Bind Variable Form] is Not Corresponding to the [Variable Name] in [Selected Variable(s)] Panel","BOP_CheckPopulateSameValue",5)
+            End If
+        Next
+        Call chkBOPPopuSameValue.set_CheckState("Unchecked")
+        Call TCLog.LogMsg("Unchecked [Populate same value for the same variable name in all jobs] checkbox","BOP_CheckPopulateSameValue",3)
+        For i=0 To aRowCount-1
+            grdBOPInputBinVar.DefaultView.DataController.CurrentControllerRow=i
+            Delay(1000)
+            'check Variable name
+            aCVarName = grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLVarName)
+            aBSQLName = grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLSQLName)
+            aBJobName = grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLJobName)
+            aDSQLName = lblBOPBVSQLNameText.Text
+            aDJobName = lblBOPBVJobNameText.Text
+
+            '---Check Job Name then Unchecked Populate same value checkbox
+            If StrComp(UCase(lblBOPBVVarNameText.Text),UCase(aCVarName))=0 Then
+                Call TCLog.LogMsg("The [Variable Name] in [Bind Variable Form] is Corresponding to the Variable name in Data browser","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The [Variable Name] in [Bind Variable Form] is Not Corresponding to the Variable name in Data browser","BOP_CheckPopulateSameValue",5)
+            End If
+
+            '---check SQL Name    
+            If StrComp(UCase(aBSQLName),UCase(aDSQLName))=0 Then
+                Call TCLog.LogMsg("The [SQL Name] in [Bind Variable Form] is Corresponding to the [SQL name] in Data browser","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The [SQL Name]: " & DoString2(aBSQLName) & " in [Bind Variable Form] is Not Corresponding to the [SQL name](" & aDSQLName & ") in Data browser","BOP_CheckPopulateSameValue",5)
+            End If
+
+            '---check Job name
+            If StrComp(UCase(aBJobName),UCase(aDJobName))=0 Then
+                Call TCLog.LogMsg("The [Job name] in bind variable form is Corresponding to the Job name in Data browser","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The [Job name] (" & DoString2(aBSQLName) & ") in bind variable form is Not Corresponding to the Job name(" & aDJobName & ") in Data browser","BOP_CheckPopulateSameValue",5)
+            End If 
+            
+        Next    
+    ElseIf aPopSameValue="Unchecked" Then
+        For i=0 To aRowCount-1
+            p1.DefaultView.DataController.CurrentControllerRow=i
+            Delay(1000)
+
+            '---check Variable name
+            aCVarName = Trim(grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLVarName))
+            aBSQLName = Trim(grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLSQLName))
+            aBJobName = Trim(grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLJobName))
+            aDSQLName = Trim(lblBOPBVSQLNameText.Text)
+            aDJobName = Trim(lblBOPBVJobNameText.Text)
+            If StrComp(UCase(Trim(lblBOPBVVarNameText.Text)),UCase(TrimStr(aCVarName)))=0 Then
+                Call TCLog.LogMsg("The variable name in bind variable form is equal to the Variable name in Data browser","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The variable name in bind variable form is Not Conforma to the Variable name in Data browser","BOP_CheckPopulateSameValue",5)
+            End If
+
+            '---check SQL Name  
+            If StrComp(UCase(aBSQLName),UCase(aDSQLName))=0 Then
+                Call TCLog.LogMsg("The SQL name in bind variable form is equal to the SQL name in Data browser","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The SQL name (" & DoString2(aBSQLName)& ") in bind variable form is Not Conforma to the SQL name(" & aDSQLName & ") in Data browser","BOP_CheckPopulateSameValue",5)
+            End If 
+            
+            '---check Job name
+            If StrComp(UCase(aBJobName),UCase(aDJobName))=0 Then
+                Call TCLog.LogMsg("The Job name in bind variable form is equal to the Job name in Data browser","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The Job name (" & DoString2(aBSQLName) & ") in bind variable form is Not Conform to the Job name(" & aDJobName & ") in Data browser","BOP_CheckPopulateSameValue",5)
+            End If         
+        Next
+        Call chkBOPPopuSameValue.set_CheckState("Checked")
+        Call TCLog.LogMsg("Checked Populate same value for the same variable name in all jobs checkbox","BOP_CheckPopulateSameValue",3)
+        For i=0 To aRowCount-1
+            grdBOPInputBinVar.DefaultView.DataController.CurrentControllerRow=i
+            Delay(1000)
+            
+            '---check Job name
+            If StrComp(UCase(lblBOPBVJobNameText.Text),UCase("All Jobs"))=0 Then
+                Call TCLog.LogMsg("The job name is :(All jobs),then Checked Populate same value for the same variable name in all jobs","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The job name is not All jobs,then Checked Populate same value for the same variable name in all jobs","BOP_CheckPopulateSameValue",5)
+            End If
+            
+            '---check SQL Name
+            If StrComp(UCase(lblBOPBVSQLNameText.Text),UCase("All SQL"))=0 Then
+                Call TCLog.LogMsg("The job name is :(All SQL),then Checked Populate same value for the same variable name in all jobs","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The job name is not All SQL,then Checked Populate same value for the same variable name in all jobs","BOP_CheckPopulateSameValue",5)
+            End If
+
+            '---check Variable name
+            aCVarName=grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLVarName)
+            If StrComp(UCase(lblBOPBVVarNameText.Text),UCase(aCVarName))=0 Then
+                Call TCLog.LogMsg("The variable name in bind variable form is equal to the Variable name in Data browser","BOP_CheckPopulateSameValue",3)
+            Else
+                Call TCLog.LogMsg("The variable name in bind variable form is Not Conforma to the Variable name in Data browser","BOP_CheckPopulateSameValue",5)
+            End If
+        Next 
+    End If
+    
+    Call chkBOPPopuSameValue.set_CheckState("Unchecked")
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_BindVariable_SetValue
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- set value of binVar
+'Call by------------ 
+'******************************************************************************************************************
+Sub BOP_BindVariable_SetValue(aDataID)
+    Call BOP_BindVarWinCtlSet()
+    Dim p1,i,k,aRowCount,aVarName,aCVarName,aInputType
+    Dim aPlag
+    Dim aPopSameValue,aDataType,aNull,aVarValue
+    Dim aDPT_ID,aCVarule,aColumnName
+    
+    aVarName   = UCase(ObjSS.GetSqlServerCell("BOP_BindVariable_SetValue",aDataID,"I_VariableName"))
+    aDataType  = ObjSS.GetSqlServerCell("BOP_BindVariable_SetValue",aDataID,"I_DataType")
+    aNull      = ObjSS.GetSqlServerCell("BOP_BindVariable_SetValue",aDataID,"I_Null")
+    aVarValue  = ObjSS.GetSqlServerCell("BOP_BindVariable_SetValue",aDataID,"I_VariableValue")
+    aInputType = ObjSS.GetSqlServerCell("BOP_BindVariable_SetValue",aDataID,"I_SelectionInputType")
+
+    If grdBOPInputBinVar.exists Then
+        For k=0 To grdBOPInputBinVar.DefaultView.Columns.count-1
+            If grdBOPInputBinVar.DefaultView.Columns.Item_2(k).GroupIndex <>-1 Then
+                grdBOPInputBinVar.DefaultView.Columns.Item_2(k).Set_GroupIndex(-1)
+            End If
+            Delay(100)
+        Next
+        aRowCount = grdBOPInputBinVar.DefaultView.RowCount
+        Select Case aVarName
+            Case "*"
+                If aRowCount<>0 Then
+                    For i=0 To aRowCount-1
+                        grdBOPInputBinVar.DefaultView.DataController.CurrentControllerRow=i
+                        'set data type column value
+'                        If aDataType<>"" Then
+'                            Call grdBOPInputBinVar.ClickCell(i,"DataType")
+'                            If SearchDataTypeforBindVariables(aDataType)=True Then  
+'                                Call TCLog.LogMsg("Selected DataType :" & DoString2(aDataType) ,"BOP_BindVariable_SetValue",3)
+'                            Else
+'                                Call TCLog.LogMsg("Select DataType: " & DoString2(aDataType) & " Failed!","BOP_BindVariable_SetValue",5)
+'                                stopWorkflow=False
+'                                Exit Sub
+'                            End If               
+'                        End If
+                        'set null column value  
+                        If aNull="True" Then
+                            If grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLNull)=0 Then
+                                Call grdBOPInputBinVar.ClickCell(i,"Null")
+                                Call TCLog.LogMsg("Checked [Null] Checkbox!" & "(" & DoString2(aCVarName) & ")","BOP_BindVariable_SetValue",3)
+                            End If           
+                        ElseIf aNull="False" Then
+                            If grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLNull)=-1 Then
+                                Call grdBOPInputBinVar.ClickCell(i,"Null")
+                                Call TCLog.LogMsg("Uncheck [Null] Checkbox!" & "(" & DoString2(aCVarName) & ")","BOP_BindVariable_SetValue",3)
+                            End If
+                        End If
+                        'set variable value column value
+                        Select Case aInputType
+                            'catch variable value from database
+                            Case "DataBrowser"
+                                Call btnBOPBVRefresh.RefreshMappingInfo()
+                                Call btnBOPBVRefresh.Click()
+                                Delay(3000)
+                        
+                                If grdBOPBVBrowsedData.DefaultView.RowCount<>0 Then
+                                    Call grdBOPBVBrowsedData.ClickCell(i,"SEGMENT_NAME")
+'                                    aDPT_ID = grdBOPBVBrowsedData.DefaultView.DataController.GetCurrentRowValue_3("SEGMENT_NAME")
+                                    aDPT_ID = grdBOPBVBrowsedData.wValue(i, "SEGMENT_NAME")
+                                    Delay(1000)
+                                    Sys.Refresh
+                                    'catch the variable value from bind variable form
+'                                    aCVarule = grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLVarValue)
+                                    aCVarule = grdBOPInputBinVar.wValue(i,BOP_Translation("Variable Value"))
+                                    'compare the variable value whether equal to the databrowser value
+                                    If StrComp(aDPT_ID,aCVarule)=0 Then
+                                        Call TCLog.LogMsg("Set Variable value :" & DoString2(aDPT_ID) ,"BOP_BindVariable_SetValue",3)
+                                    Else
+                                        Call TCLog.LogMsg("The Variable value in bind variable form not conform to the data browser!","BOP_BindVariable_SetValue",5)
+                                    End If 
+                                Else
+                                    Call TCLog.LogMsg("The DataBrowser return nothing,Can't select any variable value","BOP_BindVariable_SetValue",5)
+                                End If 
+                                'catch variable value from access
+                                Case Else         
+                                    If aVarValue <>"" Then
+                                        If grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLNull)=0 Then
+                                            Call grdBOPInputBinVar.DefaultView.DataController.SetCurrentRowValue_3(COLVarValue,aVarValue)
+                                            Call TCLog.LogMsg("Set Variable value :" & DoString2(aVarValue) & "(" & DoString2(aCVarName) & ")","BOP_BindVariable_SetValue",3)
+                                        Else
+                                            Call TCLog.LogMsg("The Variable value in bind variable form not same the Exepcted result!" & " Execpted Result: " & DoString2(aDPT_ID),"BOP_BindVariable_SetValue",5)
+                                        End If         
+                                    End If
+                        End Select 
+                    Next
+                Else
+                    Call TCLog.LogMsg("There is no valid Variable to set","BOP_BindVariable_SetValue",3)
+                    Exit Sub 
+                End If 
+            Case Else         
+                For i=0 To aRowCount-1
+                    grdBOPInputBinVar.DefaultView.DataController.CurrentControllerRow=i
+                    aCVarName=grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLVarName)
+                    If StrComp(aCVarName,aVarName)=0 Then
+                        aPlag=aPlag+1
+                        Call TCLog.LogMsg("Sucess Selected Variable :" & DoString2(aVarName) ,"BOP_BindVariable_SetValue",3)
+                        Exit For 
+                    End If 
+                Next
+                If aPlag=0 Then
+                    Call TCLog.LogMsg("The Variable :" & DoString2(aVarName),"BOP_BindVariable_SetValue",5) 
+                    stopWorkflow=False
+                    Exit Sub
+                End If
+                If aDataType<>"" Then
+                    Call grdBOPInputBinVar.ClickCell(i,BOP_Translation("DataType"))
+    '                 Call Aliases.QSOO.BOP_WinformsObject_frmBindVariablesForJob.BOP_grd_InputBindVariable.Click(157, 31)
+                    If SearchDataTypeforBindVariables(aDataType)=True Then  
+                        Call TCLog.LogMsg("Selected DataType :" & DoString2(aDataType) ,"BOP_BindVariable_SetValue",3)
+                    Else
+                        Call TCLog.LogMsg("Select DataType: " & DoString2(aDataType) & " Failed!","BOP_BindVariable_SetValue",5)
+                        stopWorkflow=False
+                        Exit Sub
+                    End If 
+                End If  
+                If aNull="True" Then
+                    If grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLNull)=0 Then
+                        Call grdBOPInputBinVar.ClickCell(i,"Null")
+                        Call TCLog.LogMsg("Set [Null] Checkbox Checked " & "(" & DoString2(aCVarName) & ")","BOP_BindVariable_SetValue",3)
+                    End If           
+                ElseIf aNull="False" Then
+                    If grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLNull)=-1 Then
+                        Call grdBOPInputBinVar.ClickCell(i,"Null")
+                        Call TCLog.LogMsg("Set [Null] Checkbox Unchecked " & "(" & DoString2(aCVarName) & ")","BOP_BindVariable_SetValue",3)
+                    End If
+                End If
+                Select Case aInputType
+                    'catch variable value from database
+                    Case "DataBrowser" 
+                        If grdBOPBVBrowsedData.DefaultView.RowCount<>0 Then
+                            Call grdBOPBVBrowsedData.ClickCell(i,"SEGMENT_NAME")
+                            aDPT_ID=grdBOPBVBrowsedData.DefaultView.DataController.GetCurrentRowValue_3("SEGMENT_NAME")
+                            Delay(1000)
+                            Sys.Refresh
+                            'catch the variable value from bind variable form
+                            aCVarule=grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLVarValue)
+                            'compare the variable value whether equal to the databrowser value
+                            If StrComp(aDPT_ID,aCVarule)=0 Then
+                                Call TCLog.LogMsg("Set Variable value :" & DoString2(aDPT_ID) ,"BOP_BindVariable_SetValue",3)
+                            Else
+                                Call TCLog.LogMsg("The Variable value in bind variable form not same the Exepcted result!" & " Execpted Result: " & DoString2(aDPT_ID),"BOP_BindVariable_SetValue",5)
+                            End If 
+                        Else
+                            Call TCLog.LogMsg("There is no any data records retrialed from data base!","BOP_BindVariable_SetValue",5)
+                        End If 
+                    'catch variable value from access
+                    Case Else         
+                        If aVarValue <>"" Then
+                            If grdBOPInputBinVar.DefaultView.DataController.GetCurrentRowValue_3(COLNull)=0 Then
+                                Call grdBOPInputBinVar.DefaultView.DataController.SetCurrentRowValue_3(COLVarValue,aVarValue)
+                                Call TCLog.LogMsg("Set Variable value :" & DoString2(aVarValue) & "(" & DoString2(aCVarName) & ")","BOP_BindVariable_SetValue",3)
+                            Else
+                                Call TCLog.LogMsg("The Variable value have set into Null,Can't entry value" & "(" & DoString2(aCVarName) & ")","BOP_BindVariable_SetValue",5)
+                            End If         
+                        End If
+                End Select
+        End Select
+    Else
+        Call TCLog.LogMsg("The setting bind Variable Form does not exists","BOP_BindVariable_SetValue",5)
+        stopWorkflow=False 
+    End If 
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- SearchDataTypeforBindVariables
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------ 
+'******************************************************************************************************************
+Function SearchDataTypeforBindVariables(aStrText)
+    
+    Call Public_LookEdtPopup()
+    Dim i,Intplag 
+    i = 0
+    Call lkeQSOOPopupForm.SetFocus()
+'    For i=0 To lkeQSOOPopupForm.DevExpress_Accessibility_IAccessibleGrid_get_RowCount - 1  
+    For i=0 To 16    'because cannot get the lkeQSOOPopupForm'count property, so hardcode the 16 Number
+        Call lkeQSOOPopupForm.Keys("[Down]")
+        If lkeQSOOPopupForm.CurrentValue = aStrText Then    
+            Call lkeQSOOPopupForm.RefreshMappingInfo        
+            Call lkeQSOOPopupForm.Keys("[Enter]")
+            SearchDataTypeforBindVariables = True 
+            Exit Function
+        Else
+            IntPlag=Intplag+1
+        End If
+    Next
+    If Intplag=lkeQSOOPopupForm.Properties_2.DataSource.Count Then
+        SearchDataTypeforBindVariables = False
+    End If
+    
+End Function
+'*****************************************************************************************************************
+'Function----------- BOP_BindVariable_DataBrowser
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------ check databrowser of [Setting Bind Variables] Window
+'******************************************************************************************************************
+Sub BOP_BindVariable_DataBrowser(aDataID)
+    
+    Dim i,W,L
+    Dim aSelectValue,aFromValue,aDataBaseName,aExecteCon,aExecuteSchema,aWhereValue,aOrderBy
+    Call BOP_BindVarWinCtlSet()
+    
+    aSelectValue    = ObjSS.GetSqlServerCell("BOP_BindVariable_DataBrowser",aDataID,"I_SelectValue")
+    aFromValue      = ObjSS.GetSqlServerCell("BOP_BindVariable_DataBrowser",aDataID,"I_FromValue")
+    aDataBaseName   = ObjSS.GetSqlServerCell("BOP_BindVariable_DataBrowser",aDataID,"I_DataBaseTableName") 
+    aExecteCon      = ObjSS.GetSqlServerCell("BOP_BindVariable_DataBrowser",aDataID,"I_ExecutionCon")
+    aExecuteSchema  = ObjSS.GetSqlServerCell("BOP_BindVariable_DataBrowser",aDataID,"I_ExecutionSchema")
+    aWhereValue     = ObjSS.GetSqlServerCell("BOP_BindVariable_DataBrowser",aDataID,"I_WhereValue")
+    aOrderBy        = ObjSS.GetSqlServerCell("BOP_BindVariable_DataBrowser",aDataID,"I_OrderByValue")
+    
+    W  = lkpBOPBVDB.Width
+    L  = lkpBOPBVDB.Height
+    
+    If frmBOPBindVarWin.Exists Then 
+        Call TCLog.LogMsg("The [Settting Bind variable] window Opened!","BOP_BindVariable_DataBrowser",3)   
+    Else
+        Call TCLog.LogMsg("The [Settting Bind variable] window does not exist!","BOP_BindVariable_DataBrowser",5)
+        stopWorkflow=False
+        Exit Sub
+    End If
+    
+    'set select SQL Value
+    '    if aSelectValue <> "" then
+    '      call  Aliases.QSOO.BOP_WinformsObject_frmBindVariablesForJob.BOP_select_Columns.set_Text(aSelectValue)
+    '      call TCLog.LogMsg("Set [Select] editbox value :" & DoString2(aSelectValue),"BOP_BindVariable_DataBrowser",3)
+    '    Else
+    '      call TCLog.LogMsg("Set [Select] editbox value is NUll,Can't Browser data from Database","BOP_BindVariable_DataBrowser",3)
+    '    end if
+    Call lkpBOPBVSeleColumn.RefreshMappingInfo 
+    If lkpBOPBVSeleColumn.Enabled Then
+        Call TCLog.LogMsg("The [Select] editbox is Enabled When opened [Setting Bind Variables] Window!","BOP_BindVariable_DataBrowser",3)
+    Else
+        Call TCLog.LogMsg("The [Select] editbox is Disabled When Opened [Setting Bind Variables] Window!","BOP_BindVariable_DataBrowser",5)
+    End If
+    'set From Statement Value
+    '    if aFromValue<> "" then
+    '      if aLookUpEdit.LookUpEditSelectText3(Aliases.QSOO.BOP_WinformsObject_frmBindVariablesForJob.BOP_lkp_DB,aFromValue)=true then
+    '        call TCLog.LogMsg("Set [Form] LookUp value :" & DoString2(aFromValue),"BOP_BindVariable_DataBrowser",3)
+    '        Delay(3000)
+    '      Else
+    '        call TCLog.LogMsg("the [Form] value does not exists!","BOP_BindVariable_DataBrowser",5)
+    '      end if 
+    '    else 'if from value is null,create new value from database table selector
+    '      call Aliases.QSOO.BOP_WinformsObject_frmBindVariablesForJob.BOP_lkp_DB.Click(W-W/18,L/2)
+    '      if Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.Exists Then
+    '        call TCLog.LogMsg("The Database Table Selector Window appeared" ,"BOP_BindVariable_DataBrowser",3)
+    '      
+    '        'input databse table name
+    '        Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_EditBox_ExecutionConnection.wText=aDataBaseName
+    '        call TCLog.LogMsg("Set DatabaseTable Editbox value :" & DoString2(aDataBaseName) ,"BOP_BindVariable_DataBrowser",3)
+    '      
+    '        'select execution connection profile
+    '        if aLookUpEdit.LookUpEditSelectText3(Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_EditBox_lkpConnection,aExecteCon)=true then
+    '          call TCLog.LogMsg("Set Execution Connection LookUp value :" & DoString2(aExecteCon),"BOP_BindVariable_DataBrowser",3)
+    '          Delay(3000)
+    '        Else
+    '          call TCLog.LogMsg("the Execution Connection value does not exists!","BOP_BindVariable_DataBrowser",5)
+    '        end if
+    '        call TCLog.LogMsg("Set Execution Connection Editbox value :" & DoString2(aExecteCon) ,"BOP_BindVariable_DataBrowser",3)
+    '      
+    '        'set Execution Schema value
+    '        if aExecuteSchema <> "" then
+    '          Dim ObjRes
+    '          do 
+    '            set ObjRes=Runner.CallObjectMethodAsync(Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_Combox_lkpParsingUser,"set_ItemIndex",i)
+    '            call CheckQSOOPass
+    '            if Aliases.QSOO_frm_MessageDialog.Exists Then
+    '              Aliases.QSOO_frm_MessageDialog.MSG_btn_OK.click 
+    '              call TCLog.LogMsg("Connect Lost Contact","BOP_BindVariable_DataBrowser",5)
+    '            end if
+    '            if StrComp(Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_Combox_lkpParsingUser.Text,aExecuteSchema)=0 Then
+    '              call TCLog.LogMsg("Set [Execution Schema] value :" & DoString2(aExecuteSchema),"BOP_BindVariable_DataBrowser",3)
+    '              exit Do
+    '            end if 
+    '            i=i+1
+    '          Loop While(Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_Combox_lkpParsingUser.get_ItemIndex=i-1)
+    '        Else
+    '          call TCLog.LogMsg("Set [Execution Schema] default value","BOP_BindVariable_DataBrowser",3)
+    '        end if 
+    '        'click OK Button
+    '        call Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_SimpleButton_btnOK.click
+    '        'check whehether there is exists null in database table editbox 
+    '        if Aliases.QSOO_frm_MessageDialog.Exists Then
+    '          Aliases.QSOO_frm_MessageDialog.MSG_btn_OK.click 
+    '          call TCLog.LogMsg("All Fields must be completed","BOP_BindVariable_DataBrowser",5)
+    '          if Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_SimpleButton_btncancel.Enabled Then
+    '            call Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.BOP_SimpleButton_btncancel.click 
+    '          Else
+    '            call TCLog.LogMsg("The Cancel Button is Dim,Can't select Database Table","BOP_BindVariable_DataBrowser",5)
+    '            call Aliases.QSOO.BOP_WinformsObject_frmInputBindVarDBSelector.Close
+    '          end if
+    '        end if  
+    '      Else
+    '        call TCLog.LogMsg("The Database Table Selector Window does not appeared","BOP_BindVariable_DataBrowser",5)
+    '      end if 
+    '    end if
+    If lkpBOPBVDB.Enabled Then
+        Call TCLog.LogMsg("The [Form] LookUp Combox is Enabled!","BOP_BindVariable_DataBrowser",3)
+    Else
+        Call TCLog.LogMsg("The [Form] LookUp Combox is Disabled!","BOP_BindVariable_DataBrowser",5)
+    End If
+    
+    'entry where statement 
+    '    if aWhereValue<>"" then
+    '      call Aliases.QSOO.BOP_WinformsObject_frmBindVariablesForJob.BOP_edt_Where.set_Text(aWhereValue) 
+    '      call TCLog.LogMsg("Set [Where] Editbox value :" & DoString2(aWhereValue) ,"BOP_BindVariable_DataBrowser",3)
+    '    end if
+    Call edtBOPBVWhere.RefreshMappingInfo
+    If edtBOPBVWhere.Enabled Then
+        Call TCLog.LogMsg("The [Where] Editbox is Enabled!","BOP_BindVariable_DataBrowser",3)
+    Else
+        Call TCLog.LogMsg("The [Where] Editbox is Disabled!","BOP_BindVariable_DataBrowser",5)
+    End If
+    'entry orderby statement
+    Call edtBOPBVOrderBy.RefreshMappingInfo 
+    If edtBOPBVOrderBy.Enabled Then
+        Call TCLog.LogMsg("The [OrderBy] Editbox is Enabled!","BOP_BindVariable_DataBrowser",3)
+    Else
+        Call TCLog.LogMsg("Set [OrderBy] Editbox Disabled!","BOP_BindVariable_DataBrowser",5)
+    End If
+    
+    '    if aOrderBy<>"" then
+    '      call Aliases.QSOO.BOP_WinformsObject_frmBindVariablesForJob.BOP_edt_OrderBy.set_Text(aOrderBy)
+    '      call TCLog.LogMsg("Set [OrderBy] Editbox value :" & DoString2(aOrderBy) ,"BOP_BindVariable_DataBrowser",3) 
+    '    end if
+    'click browser button
+    Call btnBOPBVRefresh.RefreshMappingInfo
+    If btnBOPBVRefresh.Enabled Then
+        Call btnBOPBVRefresh.click()
+        Call TCLog.LogMsg("Click [Browse] button!","BOP_BindVariable_DataBrowser",3)
+        Delay(3000)
+        'need input password if the connection profile not save password
+        Call CheckQSOOPass()
+        Call Public_DlgSet()
+        If frmQSOOMsgDialog.Exists Then
+            Call TCLog.LogMsg("Unexcept Error Occured,Can't Return Database Records","BOP_BindVariable_DataBrowser",5)
+            Do 
+                btnQSOOOKInMsgDialog.click
+            Loop While (frmQSOOMsgDialog.Exists)
+            stopWorkflow=False
+        End If 
+    Else
+        Call TCLog.LogMsg("The [Browse] Button is Dim,Can't Return Selected SQL","BOP_BindVariable_DataBrowser",5)
+    End If
+    
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_BindVariable_CloseWindow
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------ close [Setting Bind Variables] Window
+'******************************************************************************************************************
+Sub BOP_BindVariable_CloseWindow(aDataID)
+    Call BOP_BindVarWinCtlSet()
+    Dim ChooseBtn
+    ChooseBtn=ObjSS.GetSqlServerCell("BOP_BindVariable_CloseWindow",aDataID,"I_SelectionType")
+    
+    If frmBOPBindVarWin.Exists Then 
+        Select Case ChooseBtn
+            Case "OK"
+            If btnBOPOKInBinVar.Enabled Then
+                Call btnBOPOKInBinVar.Click()
+                Call TCLog.LogMsg("Click OK Button to Close setting bind variable Window!","BOP_BindVariable_CloseWindow",3)
+            Else
+                Call TCLog.LogMsg("the Ok Button is Dim,can't close Setting bind variable window","BOP_BindVariable_CloseWindow",5)
+            End If
+            Case "Cancel" 
+            If btnBOPCancelInBinVar.Enabled Then 
+                Call btnBOPCancelInBinVar.Click
+                Call TCLog.LogMsg("Click Cancel Button to Close setting bind variable Window!","BOP_BindVariable_CloseWindow",3)
+            Else
+                Call TCLog.LogMsg("the Cancel Button is Dim,can't close Setting bind variable window","BOP_BindVariable_CloseWindow",5)
+            End If      
+            Case "Close"
+            If frmBOPBindVarWin.Exists Then  
+                Call frmBOPBindVarWin.Close 
+                Call TCLog.LogMsg("Click Close Button to Close setting bind variable Window!","BOP_BindVariable_CloseWindow",3)
+            Else
+                Call TCLog.LogMsg("the setting bind variable window does not exists,can't close Setting bind variable window","BOP_BindVariable_CloseWindow",5)
+            End If  
+        End Select
+    Else
+        Call TCLog.LogMsg("the setting bind variable window does not exists,can't close Setting bind variable window","BOP_BindVariable_CloseWindow",5)
+        Exit Sub 
+    End If 
+    
+    '    if Err.number<>0 Then
+    '      call TCLog.LogMsg("The Unexpect Error generated,can't close Setting bind variable window!","BOP_BindVariable_CloseWindow",5)
+    '      Log.Message(Err.description)
+    '      Err.Clear
+    '    Else
+    '      call TCLog.LogMsg("Scuesslly Closed Setting bind variable window!","BOP_BindVariable_CloseWindow",3)
+    '    end if
+    Delay(3000) 
+    Call CheckQSOOPass
+    
+End Sub 
+'*****************************************************************************************************************
+'Function----------- BOP_GenerateOptScript
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'******************************************************************************************************************
+Sub BOP_GenerateOptScript(aDataID)
+    
+    Dim aJobCount,aJobName,aSavePath,aActionType,aOpenType,aStatus,aOwnerName,aFileName,aPlag
+    Dim J,i,k
+    Call BOP_JobListPageCtlSet()
+
+    aJobName=ObjSS.GetSqlServerCell("BOP_GenerateOptScript",aDataID,"I_JobName") 
+    aSavePath=ObjSS.GetSqlServerCell("BOP_GenerateOptScript",aDataID,"I_SavePath")
+    
+    aJobCount = grdBOPJobList.DefaultView.RowCount
+    Select Case aJobName
+        'select all jobs
+        Case "*" 
+            For J=0 To aJobCount-1
+                aOpenType   = ObjSS.GetSqlServerCell("BOP_GenerateOptScript",aDataID,"I_OpenType")
+                aActionType = ObjSS.GetSqlServerCell("BOP_GenerateOptScript",aDataID,"I_ActionType")
+                grdBOPJobList.DefaultView.DataController.CurrentControllerRow = J
+                aStatus = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLJobStatus)
+                If aStatus=10 Then 
+                    Select Case aOpenType
+                        Case "Button"'select click button
+                            Call TCLog.LogMsg("Select Click [Generate Optimized Script] Button to Open [Optimized Script] Window!","BOP_GenerateOptimizedScript",3)
+                            If CheckToolButtonState(barBOPBatchHeader,BTNOptScript)=True Then 
+                                Call TCLog.LogMsg("The [Generate Optimized Script] Button is Enabled when Optimize completed","BOP_GenerateOptimizedScript",3)
+                                Call ObjPOP.ClickToolBarButton(barBOPBatchHeader,BTNOptScript)
+                                Call TCLog.LogMsg("Click [Generate Optimized Script] Button!","BOP_GenerateOptimizedScript",3)
+                            Else
+                                Call TCLog.LogMsg("The Generate Optimized Script Button is Dim when Optimize completed","BOP_GenerateOptimizedScript",5)
+                                Exit Sub
+                            End If
+                        Case "PopupMenu"  'select rightclick 
+                            Call TCLog.LogMsg("select [Generate Optimized Script] from Popup Menu to open [Optimized Script] Window","BOP_GenerateOptimizedScript",3)
+                            Call grdBOPJobList.ClickR(grdBOPJobList.QA_GetFocusedRowPositionX,grdBOPJobList.QA_GetFocusedRowPositionY)
+                            Call Public_PopupSet()              
+                            If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNOptScript)=True Then 
+                                Call TCLog.LogMsg("Sucess to click [Generate Optimized Script] item from Popup Menu","BOP_GenerateOptimizedScript",3)
+                            Else
+                                Call TCLog.LogMsg("The [Generate Optimized Script] item is Dim,can't Open Optimized Script Window","BOP_GenerateOptimizedScript",5)
+                            End If 
+                    End Select
+                
+                    Delay(6000)
+                    Call Public_DlgSet()
+                    Call frmQSOOMsgDialog.RefreshMappingInfo
+                    If frmQSOOMsgDialog.Exists Then
+                        If frmQSOOMsgDialog.Wndcaption="Error" Then
+                            Call TCLog.LogMsg("The [Error] Window Promptd When Click [Generate Optimized Script] button!","BOP_GenerateOptimizedScript",5)
+                            Exit Sub
+                        ElseIf frmQSOOMsgDialog.Wndcaption="Warning" Then
+                            Call TCLog.LogMsg("The [Warning] Window Promptd When Click [Generate Optimized Script] button!","BOP_GenerateOptimizedScript",5)
+                            Exit Sub               
+                        End If
+                    End If
+                
+                    Call BOP_ReplaceScript(aActionType,aSavePath)
+                
+                Else           
+                    Call TCLog.LogMsg("The [Generate Optimized Script] Button is Disabled then not complete Optimize","BOP_GenerateOptimizedScript",5)
+                End If 
+            Next
+        Case Else 'select a special job
+            aOpenType   = ObjSS.GetSqlServerCell("BOP_GenerateOptScript",aDataID,"I_OpenType")
+            aActionType = ObjSS.GetSqlServerCell("BOP_GenerateOptScript",aDataID,"I_ActionType")
+        
+            Delay(3000)
+            aStatus = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLJobStatus)
+            i = grdBOPJobList.DefaultView.DataController.CurrentControllerRow
+            If aStatus=10 Then 
+                Select Case aOpenType
+                    Case "Button"
+                        Call TCLog.LogMsg("Select Click [Generate Optimized Script] Button to OPen Optimized Window","BOP_GenerateOptimizedScript",3)
+                        If CheckToolButtonState(barBOPBatchHeader,BTNOptScript)=True Then
+                            Call TCLog.LogMsg("The [Generate Optimized Script] Button is Enabled","BOP_GenerateOptimizedScript",3)
+                            Call ObjPOP.ClickToolBarButton(barBOPBatchHeader,BTNOptScript)
+                            Call TCLog.LogMsg("Click [Generate Optimized Script] Button","BOP_GenerateOptimizedScript",3)
+                        Else
+                            Call TCLog.LogMsg("The [Generate Optimized Script] Button is Dim","BOP_GenerateOptimizedScript",5)
+                            Exit Sub
+                        End If
+                    Case "PopupMenu"
+                    Call TCLog.LogMsg("Select Right-Click to Open Optimized Window","BOP_GenerateOptimizedScript",3)
+                    Call grdBOPJobList.ClickR(grdBOPJobList.QA_GetFocusedRowPositionX,grdBOPJobList.QA_GetFocusedRowPositionY)
+                    Call Public_PopupSet()
+                    Call TCLog.LogMsg("Right-Click in Job List Grid!","BOP_GenerateOptimizedScript",3)
+                    If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNOptScript)=True Then 
+                        Call TCLog.LogMsg("Click [Optimized Script] Button","BOP_GenerateOptimizedScript",3)
+                    Else
+                        Call TCLog.LogMsg("[Generate Optimized Script] Button is Dim,can't Open Optimized Script Window","BOP_GenerateOptimizedScript",5)
+                    End If 
+                End Select
+            
+                Delay(10000)
+                Call Public_DlgSet()
+                Call frmQSOOMsgDialog.RefreshMappingInfo
+                If frmQSOOMsgDialog.Exists Then
+                    If frmQSOOMsgDialog.Wndcaption="Error" Then
+                        Call TCLog.LogMsg("The [Error] Window Promptd When Click [Generate Optimized Script] button!","BOP_GenerateOptimizedScript",5)
+                        Exit Sub
+                    ElseIf frmQSOOMsgDialog.Wndcaption="Warning" Then
+                        Call TCLog.LogMsg("The [Warning] Window Promptd When Click [Generate Optimized Script] button!","BOP_GenerateOptimizedScript",5)
+                        Exit Sub               
+                    End If
+                End If
+            
+                Call BOP_ReplaceScript(aActionType,aSavePath)
+            
+            Else
+                Call TCLog.LogMsg("The Generate Optimized Script Button is Disabled","BOP_GenerateOptimizedScript",5)
+            End If
+        
+    End Select
+    
+End Sub 
+'*****************************************************************************************************************
+'Function----------- BOP_ReplaceScript
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------BOP_GenerateOptScript
+'******************************************************************************************************************
+Sub BOP_ReplaceScript(aActionType,aSavePath)
+    
+    Dim i,J,aSQLName,aJobName,aRowCount 
+    Call BOP_GerOptScriptCtlSet()
+    
+    If (frmBOPGerOptScript.Exists = True) Then
+        Call TCLog.LogMsg("The [Optimized Script] Window Opened","BOP_ReplaceScript",3)    
+    Else
+        Call TCLog.LogMsg("The [Optimized Script] Window does not Opened","BOP_ReplaceScript",5)
+        Exit Sub
+    End If
+    
+    Select Case aActionType
+        Case "SaveToFile"
+            aRowCount = grdBOPGerScriptSQLList.DefaultView.RowCount
+            'check SavetoFile button 
+            If (btnBOPGerScriptSave.Enabled = True) Then
+                Call TCLog.LogMsg("The SaveToFile button is Enabled then Opened the Optimized Script Window","BOP_ReplaceScript",3)
+            Else
+                Call TCLog.LogMsg("The SaveToFile button is Dim then Opened the Optimized Script Window","BOP_ReplaceScript",5)
+            End If 
+            'check Close button
+            If (btnBOPGerScriptClose.Enabled = True) Then
+                Call TCLog.LogMsg("The Close button is Enabled then Opened the Optimized Script Window","BOP_ReplaceScript",3)
+            Else
+                Call TCLog.LogMsg("The Close button is Dim then Opened the Optimized Script Window","BOP_ReplaceScript",5)
+            End If
+            'check All SQL 
+            For i=0 To aRowCount-1
+            
+                Delay(1000)
+                grdBOPGerScriptSQLList.DefaultView.DataController.CurrentControllerRow=i
+                aSQLName= grdBOPGerScriptSQLList.DefaultView.DataController.getcurrentRowValue_3("SQLName")
+                'check Original Script panel
+                If syeBOPGerScriptOriText.SelectedView.SelectedText.OleValue<>"" Then
+                    Call TCLog.LogMsg("the Original Script displayed Correctly When Highlighted SQL: " & DoString2(aSQLName),"BOP_ReplaceScript",3)
+                Else
+                    Call TCLog.LogMsg("the Original Script displayed Incorrectly When Highlighted SQL: " & DoString2(aSQLName),"BOP_ReplaceScript",5)
+                End If
+                'check replacement Script panel
+                If syeBOPGerScriptRepText.SelectedView.SelectedText.OleValue <> "" Then
+                    Call TCLog.LogMsg("the Replacement Script displayed correctly When Highlighted SQL: " & DoString2(aSQLName),"BOP_ReplaceScript",3)
+                Else
+                    Call TCLog.LogMsg("the Replacement Script displayed Incorrectly When Highlighted SQL: " & DoString2(aSQLName),"BOP_ReplaceScript",5)
+                End If
+                'check SavetoFile button 
+                If (btnBOPGerScriptSave.Enabled = True) Then
+                    Call TCLog.LogMsg("The [SaveToFile] button is Enabled When Highlighted SQL :" & DoString2(aSQLName),"BOP_ReplaceScript",3)  
+                Else
+                    Call TCLog.LogMsg("The [SaveToFile] button is Dim When Highlighted SQL :" & DoString2(aSQLName),"BOP_ReplaceScript",5)
+                End If
+                'check close button state then view Everyone SQL
+                If (btnBOPGerScriptClose.Enabled = True) Then
+                    Call TCLog.LogMsg("The [Close] button is Enabled When Highlighted SQL :" & DoString2(aSQLName),"BOP_ReplaceScript",3)
+                Else
+                    Call TCLog.LogMsg("The [Close] button is Dim When Highlighted SQL :" & DoString2(aSQLName),"BOP_ReplaceScript",5)
+                End If          
+            Next
+            'check SavetoFile button 
+            If (btnBOPGerScriptSave.Enabled = True) Then
+                Call btnBOPGerScriptSave.click
+                Call TCLog.LogMsg("Click [SaveToFile] button","BOP_ReplaceScript",3) 
+                Delay(20000)
+                Call Public_Winfrm()
+                If (frmFileSysWin.Exists = True) Then
+                    Call TCLog.LogMsg("the [Save Replaced Script] Window Displayed","BOP_ReplaceScript",3)
+                    'save the replaced script to file
+                    If cmbFileComboBox.Exists= True Then
+                        Call cmbFileComboBox.Keys(aSavePath)
+                        Call TCLog.LogMsg("Entered Save file path:" & DoString2(aSavePath),"BOP_ReplaceScript",3) 
+                        Call btnFileSysSave.RefreshMappingInfo()
+                        If btnFileSysSave.Enabled = True Then
+                            Call btnFileSysSave.click()
+    '                        Dim objRes
+    '                        Set objRes=Runner.CallObjectMethodAsync(btnFileSysSave,"Click")
+    '                        If frmFileSysWin.Exists Then 
+    '                            If btnFileOK.Exists Then
+    '                                Call sys.Desktop.Keys("[Enter]")
+    '                                If btnFileCancel.enabled Then 
+    '                                    Call btnFileCancel.click
+    '                                End If                        
+    '                            End If                      
+    '                        ElseIf Aliases.QSOO.Win_frm_Main.Exists Then
+    '                            If Aliases.QSOO.Win_frm_Main.Win_btn_Yes.Exists Then
+    '                                Call Aliases.QSOO.Win_frm_Main.Win_btn_Yes.click 
+    '                            End If
+                        Else
+                            Call TCLog.LogMsg("the Save button is Dim ,can't save Replaced script to file","BOP_ReplaceScript",5)
+                        End If
+                    ElseIf edtFileSaveName.Exists= True Then
+                            Call edtFileSaveName.Keys(aSavePath)
+                            Call TCLog.LogMsg("Entered Save file path:" & DoString2(aSavePath),"BOP_ReplaceScript",3) 
+                            Call btnFileSysSave.RefreshMappingInfo()
+                            If btnFileSysSave.Enabled = True Then
+                                Call btnFileSysSave.click()
+                            Else
+                                Call TCLog.LogMsg("the Save button is Dim ,can't save Replaced script to file","BOP_ReplaceScript",5)
+                            End If
+                    Else
+                            Call TCLog.LogMsg("the File Name Editbox is Dim ,can't entry file path to save","BOP_ReplaceScript",5)
+                    End If
+                Else
+                    Call TCLog.LogMsg("the [Save Replaced Script] Window not opened then clicked [SaveToFile] button","BOP_ReplaceScript",5)
+                End If                   
+                'check the file whether save sucessfully
+                Delay(10000)
+                If aqFile.Exists(aSavePath) Then
+                    Call TCLog.LogMsg("The Script File Exists,save the Replaced Script to :" & DoString2(aSavePath)& " Successful","BOP_ReplaceScript",3)
+                Else
+                    Call TCLog.LogMsg("The Script File Exists,save the Replaced Script to :" & DoString2(aSavePath)& " Failed","BOP_ReplaceScript",5)
+                End If  
+            Else
+                Call TCLog.LogMsg("The [SaveToFile] button is Dim then View :" & DoString2(aSQLName),"BOP_ReplaceScript",5)
+            End If
+        Case "Close"
+            If (btnBOPGerScriptClose.Enabled = True) Then
+                Call TCLog.LogMsg("The SaveToFile button is Enabled then Open the Optimized Script Window","BOP_ReplaceScript",3)
+            Else
+                Call TCLog.LogMsg("The SaveToFile button is Dim then Open the Optimized Script Window","BOP_ReplaceScript",5)
+            End If
+    End Select  
+    
+    Call frmBOPGerOptScript.close
+    
+    '----Delete the saved file
+    If aqFile.Exists(aSavePath) Then
+        Call aqFileSystem.DeleteFile(aSavePath)    
+    End If
+    
+End Sub 
+
+Sub BOP_JobReport(aDataID)
+    
+    Dim aJobReport,aOptionName,aOptArray,aOptionsCount
+    Dim i 
+    aJobReport=ObjSS.GetSqlServerCell("BOP_JobReport",aDataID,"I_SelectionType")
+    aOptionName=ObjSS.GetSqlServerCell("BOP_JobReport",aDataID,"I_ReportOption")
+    aOptArray=Split(aOptionName,";")
+    
+    Select Case aJobReport
+        Case "OptimizedJob"
+        If CheckToolButtonState(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_Bar_DockBarCtrl,BTNQReport)=True Then 
+            Call ObjPOP.ClickToolBarButton(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_Bar_DockBarCtrl,BTNQReport)
+            Call TCLog.LogMsg("Click Optimized Job Report Button","BOP_JobReport",3)
+            Delay(10000)
+        Else
+            Call TCLog.LogMsg("The Optimized Job Report Button is Dim then complete Optimize","BOP_JobReport",5)
+        End If
+        If (Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.Exists = True) Then
+            Call TCLog.LogMsg("Batch Job Report Window dislayed","BOP_JobReport",3)
+            'set all checkbox in Unchecked state
+            'Check SQL Information checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.Click
+                Call TCLog.LogMsg("set [SQL Information] checkbox Unchecked","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("[SQL Information] checkbox is Unchecked","BOP_JobReport",3)
+            End If
+            'check SQL User Comment checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.Click
+                Call TCLog.LogMsg("set [SQL User Comment] checkbox Unchecked","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The  [SQL User Comment] checkbox is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Original SQL Text checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.Click
+                Call TCLog.LogMsg("set [Original SQL Text] checkbox Unchecked","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("the [Original SQL Text] checkbox is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Original SQL Plan checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.Click
+                Call TCLog.LogMsg("set [Original SQL Plan] checkbox Unchecked","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Original SQL Plan] checkbox is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Converted SQL Text checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.Click
+                Call TCLog.LogMsg("Set [Converted SQL Text] checkbox Unchecked","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Converted SQL Text] checkbox is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Best Alternative SQL Text check box
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.Click
+                Call TCLog.LogMsg("Set [Best Alternative SQL Text] checkbox in Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Best Alternative SQL Text] checkbox is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Best Alternative SQL Plan checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.Click
+                Call TCLog.LogMsg("Set [Best Alternative SQL Plan] checkbox Unchecked","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Best Alternative SQL Plan] Checkbox is Unchecked","BOP_JobReport",3)
+            End If
+            'Select The Input Report Options  
+            For i=0 To UBound(aOptArray)
+                Select Case aOptArray(i)
+                    Case "SQL Information"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.Click
+                            Call TCLog.LogMsg("Selected [SQL Information] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [SQL Information] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The SQL Information CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "SQL User Comment"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.Click
+                            Call TCLog.LogMsg("Selected [SQL User Comment] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [SQL User Comment] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The [SQL User Comment] CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Original SQL Text"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.Click
+                            Call TCLog.LogMsg("Selected [Original SQL Text] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Original SQL Text] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The [Original SQL Text] CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Original SQL Plan"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.Click
+                            Call TCLog.LogMsg("Selected [Original SQL Plan] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Original SQL Plan] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The [Original SQL Plan] CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Convertd SQL Text"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.Click
+                            Call TCLog.LogMsg("Selected [Converted SQL Text] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Converted SQL Text] Option Options to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The Converted SQL Text Options CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Best Alternative SQL Text"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.Click
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Text] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Text] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The [Best Alternative SQL Text] CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Best Alternative SQL Plan"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.Click
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Plan] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Plan] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The Best Alternative SQL Plan CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                End Select
+            Next   
+        Else
+            Call TCLog.LogMsg("Batch Job Report Window not dislay then ","BOP_JobReport",3)
+        End If
+        If (Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_SimpleButton_btnOK.Enabled = True) Then
+            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_SimpleButton_btnOK.Click
+            Call TCLog.LogMsg("Click OK Button","BOP_JobReport",3)
+            Delay(30000)
+            Call Aliases.QSOO.SCN_Preview_SQLReport.WaitProperty("Exists",True,3000)
+            If Aliases.QSOO.SCN_Preview_SQLReport.Exists Then
+                Call Aliases.QSOO.SCN_Preview_SQLReport.Close
+                Call TCLog.logMsg("The Optimized Job Report Preview document Displayed","BOP_Reportjob",3)
+            Else
+                bSuccess=0
+                Call TCLog.logMsg("The Optimized Job Report Preview document does not Display","BOP_ReportJob",5)
+                Exit Sub 
+            End If
+        Else
+            Call TCLog.LogMsg("The OK Button is Dim","BOP_JobReport",5)
+        End If          
+        Case "BatchSummary"
+        If CheckToolButtonState(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_Bar_DockBarCtrl,BTNSReport)=True Then 
+            Call ObjPOP.ClickToolBarButton(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_Bar_DockBarCtrl,BTNSReport)
+            Call TCLog.LogMsg("The Batch Summary Report Button is Enabled then complete Optimize","BOP_JobReport",3)
+            Delay(10000)
+        Else
+            Call TCLog.LogMsg("The Batch Summary Report Button is Dim then complete Optimize","BOP_JobReport",5)
+        End If
+        If (Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.Exists = True) Then
+            Call TCLog.LogMsg("Batch Job Report Window dislay","BOP_JobReport",3)
+            'set all checkbox in Unchecked state
+            'Check SQL Information checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.Click
+                Call TCLog.LogMsg("set SQL Information in Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("SQL Information Options is Unchecked","BOP_JobReport",3)
+            End If
+            'check SQL User Comment checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.Click
+                Call TCLog.LogMsg("set [SQL User Comment] In Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The  [SQL User Comment] Option is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Original SQL Text checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.Click
+                Call TCLog.LogMsg("set [Original SQL Text] Option In Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("the [Original SQL Text] Option is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Original SQL Plan checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.Click
+                Call TCLog.LogMsg("set [Original SQL Plan] Option in Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Original SQL Plan] Option is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Converted SQL Text checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.Click
+                Call TCLog.LogMsg("Set [Converted SQL Text] Option In Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Converted SQL Text] Option Options is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Best Alternative SQL Text check box
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.Click
+                Call TCLog.LogMsg("Set [Best Alternative SQL Text] Option in Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Best Alternative SQL Text] Option is Unchecked","BOP_JobReport",3)
+            End If
+            'Check Best Alternative SQL Plan checkbox
+            If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.CheckState="Checked" Then
+                Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.Click
+                Call TCLog.LogMsg("Set [Best Alternative SQL Plan] Option in Unchecked state","BOP_JobReport",3)
+            Else
+                Call TCLog.LogMsg("The [Best Alternative SQL Plan] Option is Unchecked","BOP_JobReport",3)
+            End If
+            'Select The Input Report Options  
+            For i=0 To UBound(aOptArray)
+                Select Case aOptArray(i)
+                    Case "SQL Information"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLInfo.Click
+                            Call TCLog.LogMsg("Selected [SQL Information] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [SQL Information] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The SQL Information CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "SQL User Comment"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkSQLComment.Click
+                            Call TCLog.LogMsg("Selected [SQL User Comment] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [SQL User Comment] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The SQL User Comment CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Original SQL Text"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLText.Click
+                            Call TCLog.LogMsg("Selected [Original SQL Text] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Original SQL Text] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The Original SQL Text CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Original SQL Plan"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLPlan.Click
+                            Call TCLog.LogMsg("Selected [Original SQL Plan] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Original SQL Plan] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The Original SQL Plan CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Convertd SQL Text"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkOSQLConverted.Click
+                            Call TCLog.LogMsg("Selected [Converted SQL Text] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Converted SQL Text] Option Options to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The Converted SQL Text Options CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Best Alternative SQL Text"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLText.Click
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Text] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Text] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The Best Alternative SQL Text CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                    Case "Best Alternative SQL Plan"
+                    If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.Enabled=True Then
+                        If Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.CheckState="Unchecked" Then
+                            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_CheckEdit_chkBSQLPlan.Click
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Plan] Option to Report","BOP_JobReport",3)
+                        Else
+                            Call TCLog.LogMsg("Selected [Best Alternative SQL Plan] Option to Report","BOP_JobReport",3)
+                        End If
+                    Else
+                        Call TCLog.LogMsg("The Best Alternative SQL Plan CheckBox is Dim","BOP_JobReport",5)
+                    End If
+                End Select
+            Next   
+        Else
+            Call TCLog.LogMsg("Batch Job Report Window not dislay then ","BOP_JobReport",3)
+        End If
+        If (Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_SimpleButton_btnOK.Enabled = True) Then
+            Call Aliases.QSOO.BOP_WinformsObject_frmQueueJobReportOption.BOP_SimpleButton_btnOK.Click
+            Call TCLog.LogMsg("Click OK Button","BOP_JobReport",3)
+            Call Aliases.QSOO.SCN_Preview_SQLReport.WaitProperty("Exists",True,3000)
+            If Aliases.QSOO.SCN_Preview_SQLReport.Exists Then
+                Call Aliases.QSOO.SCN_Preview_SQLReport.Close
+                Call TCLog.logMsg("The Optimized Job Report Preview Displayed","BOP_Reportjob",3)
+            Else
+                Call TCLog.logMsg("The Optimized Job Report Preview does not Display","BOP_ReportJob",5)
+                Exit Sub 
+            End If
+        Else
+            Call TCLog.LogMsg("The OK Button is Dim","BOP_JobReport",5)
+        End If
+    End Select
+    
+    
+End Sub 
+'*****************************************************************************************************************
+'Function----------- BOP_ExecuteSQL
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'******************************************************************************************************************
+Sub BOP_ExecuteSQL(aDataID)
+    Call BOP_SQLListPageCtlSet()
+    Dim aExecuteType,aActionType,J 
+    aExecuteType=ObjSS.GetSqlServerCell("BOP_ExecuteSQL",aDataID,"I_SelectionType")
+    aActionType=ObjSS.GetSqlServerCell("BOP_ExecuteSQL",aDataID,"I_ActionType")
+    
+    Select Case aExecuteType
+        Case "Execute Current"
+            Select Case aActionType 
+                Case "Button"
+                    If ObjPOP.ClickToolBarButton(SQLListToolBar,BTNExCurrent)=True Then               
+                        Call TCLog.LogMsg("Click Execute Current Button","BOP_ExecuteSQL",3)
+                        Delay(10000)
+                    Else
+                        Call TCLog.LogMsg("The Execute Current Button is Dim","BOP_ExecuteSQL",5)
+                    End If
+                Case "PopupMenu"
+                    Call TCLog.LogMsg("RightClick to Execute SQL","BOP_ExecuteSQL",3)
+                    J = grdBOPSQLList.DefaultView.DataController.get_CurrentControllerRow
+                    Call grdBOPSQLList.ClickCellR(J,SQLStatus)
+                    Call Public_PopupSet()
+                    If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNExCurrent)=True Then 
+                        Call TCLog.LogMsg("Sucess to click Execute Current from PopupMenu","BOP_ExecuteSQL",3)
+                    Else
+                        Call TCLog.LogMsg("The Execute Current button is Dim,Fail to click Execute Current from PopupMenu","BOP_ExecuteSQL",5)
+                    End If
+            End Select
+        Case "Execute All"
+            Select Case aActionType
+                Case "Button"
+                    If ObjPOP.ClickToolBarButton(SQLListToolBar,BTNExAll)=True Then               
+                        Call TCLog.LogMsg("Click Execute All Button","BOP_ExecuteSQL",3)
+                        Delay(10000)
+                    Else
+                        Call TCLog.LogMsg("The Execute All Button is Dim","BOP_ExecuteSQL",5)
+                    End If
+                Case  "PopupMenu"
+                    Call TCLog.LogMsg("RightClick to Execute SQL","BOP_ExecuteSQL",3)
+                    J = grdBOPSQLList.DefaultView.DataController.get_CurrentControllerRow
+                    Call grdBOPSQLList.ClickCellR(J,SQLStatus)
+                    Call Public_PopupSet()
+                    If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNExAll)=True Then 
+                        Call TCLog.LogMsg("Sucess to click Execute Current from PopupMenu","BOP_ExecuteSQL",3)
+                    Else
+                        Call TCLog.LogMsg("The Execute Current button is Dim,Fail to click Execute Current from PopupMenu","BOP_ExecuteSQL",5)
+                    End If
+            End Select
+        Case "Execute Selected"
+            Select Case aActionType
+                Case "Button"
+                    If ObjPOP.ClickToolBarButton(SQLListToolBar,BTNExSelected)=True Then 
+                        Call TCLog.LogMsg("Click Execute Selected Button","BOP_ExecuteSQL",3)
+                        Delay(10000)
+                    Else
+                        Call TCLog.LogMsg("The Execute Selected Button is Dim","BOP_ExecuteSQL",5)
+                    End If
+                Case "PopupMenu"
+                    Call TCLog.LogMsg("RightClick to Execute SQL","BOP_ExecuteSQL",3)
+                    J = grdBOPSQLList.DefaultView.DataController.get_CurrentControllerRow
+                    Call grdBOPSQLList.ClickCellR(J,SQLStatus)
+                    Call Public_PopupSet()
+                    If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNExSelected)=True Then 
+                        Call TCLog.LogMsg("Sucess to click Execute Current from PopupMenu","BOP_ExecuteSQL",3)
+                    Else
+                        Call TCLog.LogMsg("The Execute Current button is Dim,Fail to click Execute Current from PopupMenu","BOP_ExecuteSQL",5)
+                    End If
+            End Select
+    End Select
+    
+    Call CheckQSOOPass
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_AbortJob
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_AbortJob(aDataID)
+    
+    Dim aActionType,aAbortType
+    Dim J,i,k,m,aJobCount
+    Dim StrStatus,IntTime
+    
+    aActionType = ObjSS.GetSqlServerCell("BOP_AbortJob",aDataID,"I_ActionType") 
+    aAbortType  = ObjSS.GetSqlServerCell("BOP_AbortJob",aDataID,"I_AbortType")
+    Delay(3000)
+    Call BOP_JobListPageCtlSet()
+    Call grdBOPJobList.RefreshMappingInfo
+    
+'    Do
+'        StrStatus = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLJobStatus)
+'        If IntTime<>500 Then
+'            Delay(1000)
+'            IntTime=IntTime+1
+'        Else
+'            Exit Do
+'        End If
+'    Loop While StrStatus=5
+    
+    Select Case aActionType
+        Case "Button"
+            If CheckToolButtonState(barBOPBatchHeader,BTNAbortAll)=True Then 
+                Call ObjPOP.ClickToolBarButton(barBOPBatchHeader,BTNAbortAll)
+                Call TCLog.LogMsg("Click Abort All Button to Abort Job","BOP_AbortJob",3)
+                Delay(1000)
+            Else
+                Call TCLog.LogMsg("The Abort All Button is Dim,Can't continue to Abort job","BOP_AbortJob",5)
+            End If
+            aJobCount = grdBOPJobList.DefaultView.RowCount
+            For k=0 To aJobCount-1
+                grdBOPJobList.DefaultView.DataController.CurrentControllerRow = k
+                Call BOP_WaitForNotWorking("JobList",COLJobStatus)
+            Next 
+        Case "PopupMenu"
+            Call TCLog.LogMsg("RightClick to Abort Job","BOP_AbortJob",3)
+            Call grdBOPJobList.ClickR(grdBOPJobList.QA_GetFocusedRowPositionX,grdBOPJobList.QA_GetFocusedRowPositionY)
+            Call Public_PopupSet()
+            Select Case aAbortType
+                Case "Abort All Processes"
+                    If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNAbortAll)=True Then 
+                        Call TCLog.LogMsg("Sucess to click Optimize Current from PopupMenu","BOP_AbortJob",3)
+                    Else
+                        Call TCLog.LogMsg("The Abort All button is Dim,Fail to click Abort All from PopupMenu","BOP_AbortJob",5)
+                    End If
+                    aJobCount = grdBOPJobList.DefaultView.RowCount
+                    For m=0 To aJobCount-1
+                        grdBOPJobList.DefaultView.DataController.CurrentControllerRow = m
+                        Call BOP_WaitForNotWorking("JobList",COLJobStatus)
+                    Next
+                Case "Abort Current Job"
+                    If ObjPOP.ClickPopUpMenu(popBarQSOOPopControl,BTNAbortCurrent)=True Then 
+                        Call TCLog.LogMsg("Sucess to click Optimize Current from PopupMenu","BOP_AbortJob",3)
+                    Else
+                        Call TCLog.LogMsg("The Abort Current button is Dim,Fail to click Abort Current from PopupMenu","BOP_AbortJob",5)
+                    End If
+                    Call BOP_WaitForNotWorking("JobList",COLJobStatus)
+            End Select
+    End Select
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_CheckJobAbortStatus
+'Creator------------                   Date -------- 2012/9/3  
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_CheckJobAbortStatus()
+    
+    Dim aRowCount,aFileName,i,StrSQLStatus
+    Delay(30000)
+    Call BOP_SQLListPageCtlSet()
+    aRowCount = grdBOPSQLList.DefaultView.RowCount
+
+    If aRowCount>0 Then 
+        For i=0 To aRowCount-1 
+            Dim aJobStatus
+            grdBOPSQLList.DefaultView.DataController.CurrentControllerRow = i
+            aFileName    = grdBOPSQLList.DefaultView.DataController.GetCurrentRowValue_3(SSQLName)
+            StrSQLStatus = grdBOPSQLList.DefaultView.DataController.GetCurrentRowValue_3("SQLStatus")
+            If StrSQLStatus <> 6 Or StrSQLStatus <> 24 Or StrSQLStatus <> 27 Or StrSQLStatus <> 31 Then    
+                Call TCLog.LogMsg("this SQL: "& DoString2(aFileName) & " Status Display Correctly after Abort","BOP_CheckJobAbortStatus",3)
+            Else
+                Call TCLog.LogMsg("this SQL: " & DoString2(aFileName) & " Status Display Correctly after Abort","BOP_CheckJobAbortStatus",5)     
+            End If
+        Next
+    Else
+        Call TCLog.LogMsg("There is no SQL exists in SQL list Panel","BOP_CheckJobAbortStatus",5)
+    End If          
+    
+'    Delay(30000)
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_WaitForNotWorking
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------Check_AJW_BatchInfo
+'******************************************************************************************************************
+Function BOP_WaitForNotWorking(aNameMap,ColName)
+    
+    Dim P1,M,i
+    Select Case aNameMap 
+        Case "JobList"
+        Set P1=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList 
+        Case "SQLList"
+        Set P1=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList
+        Case "BatchList"
+        Set p1=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_WinformsObject_gridGroupList
+    End Select
+    
+    Delay(20000)  'wait all the jobs display
+    Sys.Refresh
+    Sys.Refresh
+    If P1.Exists Then 
+        Dim intStatus   'Modified by Gimi
+        For i=0 To p1.DefaultView.RowCount-1 
+            Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.ClickCell(i,1)
+            intStatus=p1.DefaultView.DataController.GetCurrentRowValue_3(ColName)
+            If  intStatus=2 Or _
+                intStatus=3 Or _
+                intStatus=4 Or _
+                intStatus=5 Or _
+                intStatus=17 Or _
+                intStatus=18 Or _
+                intStatus=19 Or _
+                intStatus=20 Or _
+                intStatus=21 Or _
+                intStatus=24 Or _
+                intStatus=29 Or _
+                intStatus=30 Or _
+                intStatus=39 Or _
+                intStatus=42 Or _
+                intStatus=47 Or _
+                intStatus=48 Or _
+                intStatus=49 Or _
+                intStatus=50 Or _
+                intStatus=51 Or _
+                intStatus=52 Or _
+                intStatus=53 Or _
+                intStatus=54 Or _
+                intStatus=55 Or _
+                intStatus=56 Or _
+                intStatus=57 Or _
+                intStatus=58 Or _
+                intStatus=59  Then
+                If P1.Exists Then
+                    M=1
+                    Do
+                        If M<>900 Then
+                            Delay(1000)
+                            M=M+1
+                            intStatus=p1.DefaultView.DataController.GetCurrentRowValue_3(ColName)
+                        Else
+                            Exit Do
+                        End If
+                    Loop While(intStatus<>4 And _
+                    intStatus<>6 And _
+                    intStatus<>7 And _
+                    intStatus<>8 And _
+                    intStatus<>9 And _
+                    intStatus<>10 And _
+                    intStatus<>11 And _
+                    intStatus<>2 And _
+                    intStatus<>13 And _
+                    intStatus<>14 And _
+                    intStatus<>15 And _
+                    intStatus<>16 And _
+                    intStatus<>22 And _
+                    intStatus<>23 And _
+                    intStatus<>25 And _
+                    intStatus<>27 And _
+                    intStatus<>28 And _
+                    intStatus<>31 And _
+                    intStatus<>32 And _
+                    intStatus<>33 And _
+                    intStatus<>34 And _
+                    intStatus<>35 And _
+                    intStatus<>40 And _
+                    intStatus<>41 And _
+                    intStatus<>46 And _
+                    intStatus<>58 And _
+                    intStatus<>60 And _
+                    intStatus<>61 ) 
+                Else
+                    Call TCLog.LogMsg("The Job List panel does not exists","BOP_WaitForNotWorking",5)
+                    Exit Function 
+                End If
+            End If 
+            If M=900 Then
+                Call TCLog.LogMsg("The waiting for Not working time is out!","BOP_WaitForNotWorking",5) 
+                stopWorkflow=False
+                Exit Function  
+            End If 
+        Next 
+    End If 
+    
+    
+End Function
+'*****************************************************************************************************************
+'Function----------- BOP_WaitJobOptimizeComplete
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_WaitJobOptimizeComplete()
+    Call BOP_ProgressBarCtlSet()
+    
+    Dim i
+    
+    '----Check the Progressbar whether exists or not judge the Operation whether complete
+    Call barBOPProcessBar.RefreshMappingInfo
+    If barBOPProcessBar.Exists= False Then
+        Call TCLog.LogMsg("The Optimizing Process bar does not Visible!","BOP_WaitJobOptimizeComplete",4)
+        Exit Sub
+    End If 
+    
+    i=0
+    Call barBOPProcessBar.RefreshMappingInfo
+    While (barBOPProcessBar.VisibleOnScreen = True And i<>1000)    
+        Delay(7000)
+        i=i+1
+        barBOPProcessBar.RefreshMappingInfo
+    Wend
+
+    '----if the time out 5 minutes then break delay
+    If i=1000 Then
+        Call TCLog.LogMsg("Delay Times out,Check The job Operation of Fully Completed Failed!","BOP_WaitJobOptimizeComplete",5)
+        stopWorkflow=False
+    Else
+        Call TCLog.LogMsg("Check The Job Operation of Fully Completed Successful!","BOP_WaitJobOptimizeComplete",3)
+    End If
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_WaitSQLWorkComplete
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_WaitSQLWorkComplete()
+    
+    Dim aJobCount,m,i
+    '  Dim aJobName,aSQLName
+    ' 
+    '  
+    '  aJobCount=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.DefaultView.RowCount
+    '  Sys.Refresh
+    '  Delay(1000)
+    '  aJobName=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trv_QueueTree.FocusedNode.GetDisplayText(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trv_QueueTree.Columns.Item_2(0).FieldName.OleValue )
+    '   for m=0 to aJobCount-1
+    '      Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.DefaultView.DataController.CurrentControllerRow=m
+    '      aSQLName= Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.DefaultView.DataController.GetCurrentRowValue_3(SSQLName)
+    '      call Sys.Refresh
+    '      Delay(1000)
+    '      call BOP_WaitForNotWorking("SQLList",COLSQLStatus)
+    '      if Err.number =0 then 
+    '        call TCLog.LogMsg("Sucess to Complete waiting for Not working ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_CheckJobOptimizeComplete",3)
+    '      Else
+    '        call TCLog.LogMsg("Failed to waiting for Not working ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_CheckJobOptimizeComplete",5)
+    '        stopWorkflow=False
+    '        exit sub 
+    '      end if
+    '   next
+    Call BOP_ProgressBarCtlSet()
+    Call barBOPProcessBar.RefreshMappingInfo
+    
+    '----Check the Progressbar whether exists or not judge the Operation whether complete
+'    If barBOPProcessBar.Exists= False Then
+'        Exit Sub
+'    End If 
+    
+    Do  
+        If (i<300) Then
+            Delay(1000)
+            i=i+1
+        Else
+            Exit Do
+        End If 
+        barBOPProcessBar.RefreshMappingInfo
+    Loop While (barBOPProcessBar.VisibleOnScreen = True)  
+
+    '----if the time out 5 minutes then break delay
+    If i=300 Then
+        Call TCLog.LogMsg("Delay Times out,Check The SQL Operation of Fully Completed Failed!","BOP_WaitSQLWorkComplete",5)
+        stopWorkflow=False
+    Else
+        Call TCLog.LogMsg("Check The SQL Operation of Fully Completed Successful!","BOP_WaitSQLWorkComplete",3)
+    End If
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_ViewBatchList
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_ViewBatchList(aDataID)
+    Call BOP_BatchListPageCtlSet()
+    
+    Dim aBatchName,aSubType,aNoOptJob,aOptJob,aNoImpJob,aTotalJob
+    Dim aCBatchName,aCSubName,aCBatchStatus,aCNoOptJob,aCOptJob,aCNoImpJob,aCTotalJob
+    Dim aBatchcount,i,aNumberText,aPlag,aSubValue,SQLArray
+    
+    Call CheckControlExist(grdBOPBatchList,"BOP_ViewBatchList","T","Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grdctl_gridGroupList") 
+    If stopworkflow=False Then 
+         Exit Sub 
+    End If    
+    
+    aBatchCount = grdBOPBatchList.DefaultView.RowCount
+    
+    aBatchName = ObjSS.GetSqlServerCell("BOP_ViewBatchList",aDataID,"I_BatchName") 
+    aSubType   = ObjSS.GetSqlServerCell("BOP_ViewBatchList",aDataID,"I_SubMiteType") 
+    aNoOptJob  = ObjSS.GetSqlServerCell("BOP_ViewBatchList",aDataID,"I_NoOptJobs")
+    aOptJob    = ObjSS.GetSqlServerCell("BOP_ViewBatchList",aDataID,"I_OptJobs")
+    aNoImpJob  = ObjSS.GetSqlServerCell("BOP_ViewBatchList",aDataID,"I_NoImproveJobs")
+    aTotalJob  = ObjSS.GetSqlServerCell("BOP_ViewBatchList",aDataID,"I_TotalJobs")
+    
+    Select Case aSubType
+        Case "Default"
+            aSubValue=-1
+        Case "None"
+            aSubValue=0
+        Case "SQLLab"
+            aSubValue=1
+        Case "GlobalIndexing"
+            aSubValue=2
+        Case "OutLines"
+            aSubValue=3
+        Case "Analyzer"
+            aSubValue=4
+        Case "SGAInspector"
+            aSubValue=5
+        Case "Scanner"
+            aSubValue=6
+        Case "Queue"
+            aSubValue=7 
+        Case "UserInput"
+            aSubValue=8
+        Case "TOAD"
+            aSubValue=11
+        Case "SQLNav"
+            aSubValue=12
+        Case "QuestCentral"
+            aSubValue=13
+        Case "PA"
+            aSubValue=14
+        Case "SpotLight"
+            aSubValue=15
+        Case "BenchMarkFactory"
+            aSubValue=16
+        Case "BatchOptimizer"
+            aSubValue=17
+        Case "SpotLightRAC"
+            aSubValue=18
+        Case "Unknown"
+            aSubValue=19
+    End Select
+    
+    Select Case aBatchName
+        Case "*"
+            For i=0 To aBatchCount-1
+                If grdBOPBatchList.Exists Then 
+                    'get the cloumn's value
+                    grdBOPBatchList.DefaultView.DataController.CurrentControllerRow=I
+                    Delay(3000)
+                    aCBatchName   = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLBatchName)
+                    aCBatchStatus = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLBatchStatus)
+                    aCNoOptJob    = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLNoOptJob)
+                    aCOptJob      = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLImpJob)
+                    aCNoImpJob    = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLNoImpJob)
+                    aCTotalJob    = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLTotalJob)
+                
+                    'view Total jobs column
+                    If aCNoOptJob+aCOptJob+aCNoImpJob=aCTotalJob Then
+                        Call TCLog.LogMsg("The Total Jobs Column Value is equal to the Not Optimized Jobs value add the Optimized jobs value add No Improvemwnt Jobs value: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")" _
+                        ,"BOP_ViewBatchList",3) 
+                    Else
+                        Call TCLog.LogMsg("The Total Jobs Column Value is not equal to the Not Optimized Jobs value add the Optimized jobs value add No Improvemwnt Jobs value: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")", _
+                        "BOP_ViewBatchList",5) 
+                    End If 
+                    'View Jobs Improved Panel
+                    aNumberText = charBOPNumOfJob.Titles.Item(0).Text
+                    If StrComp(Right(aNumberText,1),aCTotalJob)=0  Then
+                        Call TCLog.LogMsg("The Total Jobs  Value in Batch List Panel is equal to The Total Jobs  Value in Job Improved Panel: " & aCTotalJob & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+                    Else
+                        Call TCLog.LogMsg("The Total Jobs  Value in Batch List Panel is equal to The Total Jobs  Value in Job Improved Panel: " & aCTotalJob & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",5)
+                    End If 
+                Else
+                    Call TCLog.LogMsg("The Batch List Panel Does not exist!,can't select any Batch" ,"BOP_ViewBatchList",5)
+                End If
+            Next
+        Case Else
+        'Select Batch according to the batch name  
+            For i=0 To aBatchCount-1
+                If grdBOPBatchList.Exists Then 
+                    grdBOPBatchList.DefaultView.DataController.CurrentControllerRow=i
+                    aCBatchName = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLBatchName) 
+                    If StrComp(aCBatchName,aBatchName)=0 Then
+                        aPlag = aPlag+1
+                        Call TCLog.LogMsg("Sucess Select Batch" & DoString2(aBatchName) ,"BOP_ViewBatchList",3)
+                        Exit For
+                    End If 
+                Else
+                    Call TCLog.LogMsg("The Batch List Panel Does not exist!,can't select any Batch" ,"BOP_ViewBatchList",5)
+                End If
+            Next 
+            If aPlag=0 Then
+                Call TCLog.LogMsg("The Batch :" & DoString2(aBatchName) & " Does not exists!","BOP_ViewBatchList",5) 
+                stopWorkflow=False
+                Exit Sub
+            End If
+            'get the cloumn's value
+            aCSubName     = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLSubName)
+            aCBatchStatus = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLBatchStatus)
+            aCNoOptJob    = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLNoOptJob)
+            aCOptJob      = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLImpJob)
+            aCNoImpJob    = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLNoImpJob)
+            aCTotalJob    = grdBOPBatchList.DefaultView.DataController.GetCurrentRowValue_3(COLTotalJob)
+        
+            'View Submitted name 
+            If StrComp(CStr(aSubValue),aSubType) Then
+                Call TCLog.LogMsg("The Submitted Column Value is right: " & DoString2(aSubType) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            Else
+                Call TCLog.LogMsg("The Submitted Column Value is not right: " & DoString2(aSubType) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",5)
+            End If
+            'view No Optimized jobs Column 
+            If StrComp(CStr(aCNoOptJob),aNoOptJob)=0 Then
+                Call TCLog.LogMsg("The Not Optimized Jobs Column Value is right: " & DoString2(aCNoOptJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            Else
+                Call TCLog.LogMsg("The Not Optimized Jobs Column Value is not right: " & DoString2(aCNoOptJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",5)
+            End If
+            'view Optimized job Column
+            If StrComp(CStr(aCOptJob),aOptJob)=0 Then
+                Call TCLog.LogMsg("The Optimized Jobs Column Value is right: " & DoString2(aCOptJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            Else
+                Call TCLog.LogMsg("The Optimized Jobs Column Value is not right: " & DoString2(aCOptJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",5)
+            End If
+            'view No Imprivement jobs column
+            If StrComp(CStr(aCNoImpJob),aNoImpJob)=0 Then
+                Call TCLog.LogMsg("The Not Improvement Jobs Column Value is right: " & DoString2(aCNoImpJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            Else
+                Call TCLog.LogMsg("The Improvement Jobs Column Value is not right: " & DoString2(aCNoImpJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",5)
+            End If
+            'view Total jobs column
+            If StrComp(CStr(aCTotalJob),aTotalJob)=0 Then
+                Call TCLog.LogMsg("The Total Jobs Column Value is right: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            Else
+                Call TCLog.LogMsg("The Total Jobs Column Value is not right: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",5)
+            End If 
+            'View Jobs Improved Panel
+            If aCNoOptJob+aCOptJob+aCNoImpJob=aCTotalJob Then
+                Call TCLog.LogMsg("The Total Jobs Column Value is equal to the Not Optimized Jobs value add the Optimized jobs value add No Improvemwnt Jobs value: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            Else
+                Call TCLog.LogMsg("The Total Jobs Column Value is not equal to the Not Optimized Jobs value add the Optimized jobs value add No Improvemwnt Jobs value: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            End If 
+            
+            aNumberText = charBOPNumOfJob.Titles.Item(0).Text
+            SQLArray = Split(aSQLNumber,":") 
+            If StrComp(SQLArray(UBound(SQLArray)),aCTotalJob)=0 And StrComp(SQLArray(UBound(SQLArray)),aTotalJob)=0 Then
+                Call TCLog.LogMsg("The Total Jobs  Value in Batch List Panel is equal to The Total Jobs  Value in Job Improved Panel: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",3) 
+            Else
+                Call TCLog.LogMsg("The Total Jobs  Value in Batch List Panel is not equal to The Total Jobs  Value in Job Improved Panel: " & DoString2(aCTotalJob) & "(" & DoString2(aCBatchName) & ")","BOP_ViewBatchList",5)
+            End If
+        
+    End Select
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- BOP_ViewJobList
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_ViewJobList(aDataID)
+    Call BOP_JobListPageCtlSet()
+    
+    Dim aJobName,aConnection,aEConnection,aSchema,aESchema
+    Dim aJobCount,i,aSQLNumber,aPlag,SQLArray
+    Dim aOwnerName,aFileName,aSiSQL,aCoSQL,aInSQL,aPrSQL
+    Dim aCSiSQL,aCCoSQL,aCInSQL,aCPrSQL,aCConnection,aCEConnection,aCSchema,aCESchema
+    
+
+    aJobCount = grdBOPJobList.DefaultView.RowCount
+    
+    aJobName     = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_JobName")
+    aSiSQL       = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_SimSQL")
+    aCoSQL       = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_ComSQL")
+    aInSQL       = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_InvSQL")
+    aPrSQL       = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_PrbSQL")
+    aConnection  = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_Connection")
+    aEConnection = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_ExecuteConnection")
+    aSchema      = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_Schema")
+    aESchema     = ObjSS.GetSqlServerCell("BOP_ViewJobList",aDataID,"I_ExecuteSchema")
+    
+    Select Case aJobName
+        Case "*"
+            For i=0 To aJobCount-1
+                If grdBOPJobList.Exists Then 
+                    grdBOPJobList.DefaultView.DataController.CurrentControllerRow=i
+                    Delay(3000)
+                    aOwnerName = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLOwner)
+                    aFileName  = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLName)
+                    aCSiSQL    = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLSimSQL)
+                    If aCSiSQL<0 Then
+                        aCSiSQL=0
+                    End If 
+                    aCCoSQL = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLComSQL)
+                    If aCCoSQL<0 Then
+                        aCCoSQL=0
+                    End If 
+                    aCInSQL = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLInvSQL)
+                    If aCInSQL<0 Then
+                        aCInSQL=0
+                    End If 
+                    aCPrSQL = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLProSQL)
+                    If aCPrSQL<0 Then
+                        aCPrSQL=0
+                    End If 
+                    aCConnection  = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLConnection)
+                    aCEConnection = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLEConnection)
+                    aCSchema      = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLSchema)
+                    aCESchema     = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLESchema)
+                    'check SQL Classification Panel 
+                    aSQLNumber = chartBOPSQLClassi.Titles.Item(0).Text
+                    SQLArray = Split(aSQLNumber,":")
+                    If StrToInt(SQLArray(UBound(SQLArray)))=aCSiSQL+aCPrSQL+aCCoSQL+aCInSQL Then
+                        Call TCLog.LogMsg("The Total SQL  Value in SQL Classification Panel is equal to The Total SQL  Value in Job List Panel: " & DoString2(SQLArray(UBound(SQLArray))) & "(" & DoString2(aOwnerName & "\" & aFileName)& ")","BOP_ViewJobList",3) 
+                    Else
+                        Call TCLog.LogMsg("The Total SQL  Value in SQL Classification Panel is not equal to The Total SQL  Value in Job List Panel: " & DoString2(SQLArray(UBound(SQLArray))) & "(" & DoString2(aOwnerName & "\" & aFileName) & ")","BOP_ViewJobList",5)
+                    End If
+                Else
+                    Call TCLog.LogMsg("The Job List Panel Does not exist!,can't select any job" ,"BOP_SelectJob",5)
+                End If
+            Next
+        Case Else
+            For i=0 To aJobCount-1
+                If grdBOPJobList.Exists Then 
+                    grdBOPJobList.DefaultView.DataController.CurrentControllerRow=i
+                    aOwnerName = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLOwner)
+                    aFileName  = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLName) 
+                    If StrComp((aOwnerName & "\" & aFileName),aJobName)=0 Then
+                        aPlag=aPlag+1
+                        Call TCLog.LogMsg("Sucess Select Job" & DoString2((aOwnerName & "\" & aFileName)) ,"BOP_SelectJob",3)
+                        Exit For
+                    End If 
+                Else
+                    Call TCLog.LogMsg("The Job List Panel Does not exist!,can't select any job" ,"BOP_SelectJob",5)
+                End If
+            Next 
+            If aPlag=0 Then
+                Call TCLog.LogMsg("The Job:" & DoString2(aJobName) & " Does not exists!","BOP_SelectJob",5) 
+                stopWorkflow=False
+                Exit Sub
+            End If
+            aCSiSQL = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLSimSQL)
+            If aCSiSQL<0 Then
+                aCSiSQL=0
+            End If   
+            aCCoSQL = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLComSQL)
+            If aCCoSQL<0 Then
+                aCCoSQL=0
+            End If 
+            aCInSQL = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLInvSQL)
+            If aCInSQL<0 Then
+                aCInSQL=0
+            End If 
+            aCPrSQL = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLProSQL)
+            If aCPrSQL<0 Then
+                aCPrSQL=0
+            End If 
+            aCConnection  = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLConnection)
+            aCEConnection = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLEConnection)
+            aCSchema      = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLSchema)
+            aCESchema     = grdBOPJobList.DefaultView.DataController.GetCurrentRowValue_3(COLESchema)
+            'Check Simple column value
+            If StrComp(CStr(aCSiSQL),aSiSQL)=0 Then
+                Call TCLog.LogMsg("The Number of Simple SQL Column Value is right: " & DoString2(aCSiSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Number of Simple SQL Column Value is not right: " & DoString2(aCSiSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'check Invalid column value
+            If StrComp(CStr(aCInSQL),aInSQL)=0 Then
+                Call TCLog.LogMsg("The Number of Simple SQL Column Value is right: " & DoString2(aCInSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Number of Simple SQL Column Value is not right: " & DoString2(aCInSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'check Complex column value
+            If StrComp(CStr(aCCoSQL),aCoSQL)=0 Then
+                Call TCLog.LogMsg("The Number of Complex SQL Column Value is right: " & DoString2(aCCoSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Number of Complex SQL Column Value is not right: " & DoString2(aCCoSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'check Problem column value
+            If StrComp(CStr(aCPrSQL),aPrSQL)=0 Then
+                Call TCLog.LogMsg("The Number of Problem SQL Column Value is right: " & DoString2(aCPrSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Number of Problem SQL Column Value is not right: " & DoString2(aCPrSQL) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'Check Connection column value
+            If StrComp(aCConnection,aConnection)=0 Then
+                Call TCLog.LogMsg("The Connection Column Value is right: " & DoString2(aCConnection) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Connection Column Value is not right: " & DoString2(aCConnection) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'check Execute Connection column value
+            If StrComp(aCEConnection,aCEConnection)=0 Then
+                Call TCLog.LogMsg("The Execute Connection Column Value is right: " & DoString2(aCEConnection) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Execute Connection Column Value is not right: " & DoString2(aCEConnection) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'check Schema column value
+            If StrComp(aCSchema,aSchema)=0 Then
+                Call TCLog.LogMsg("The Schema Column Value is right: " & DoString2(aCSchema) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Schema Column Value is not right: " & DoString2(aCSchema) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'check Execute column value
+            If StrComp(aCeSchema,aESchema)=0 Then
+                Call TCLog.LogMsg("The Execute Schema Column Value is right: " & DoString2(aCSchema) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Execute Schema Column Value is not right: " & DoString2(aCSchema) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+            'check SQL Classification Panel 
+            aSQLNumber = chartBOPSQLClassi.Titles.Item(0).Text
+            SQLArray = Split(aSQLNumber,":")
+            If StrToInt(SQLArray(UBound(SQLArray)))=aCSiSQL+aCPrSQL+aCCoSQL+aCInSQL Then
+                Call TCLog.LogMsg("The Total SQL  Value in SQL Classification Panel is equal to The Total SQL  Value in Job List Panel: " & DoString2(aSQLNumber) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",3) 
+            Else
+                Call TCLog.LogMsg("The Total SQL  Value in SQL Classification Panel is not equal to The Total SQL  Value in Job List Panel: " & DoString2(aSQLNumber) & "(" & DoString2(aJobName) & ")","BOP_ViewJobList",5)
+            End If
+        
+    End Select
+    
+End Sub 
+'*****************************************************************************************************************
+'Function----------- BOP_ViewSQLList
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------
+'****************************************************************************************************************** 
+Sub BOP_ViewSQLList()
+    Call BOP_SQLListPageCtlSet()
+    
+    Dim i,aSQLClassName,aSQLStatus,aSQLCount,aSQLName
+    Dim aJobName
+
+    Call CheckControlExist(grdBOPSQLList,"BOP_ViewSQLList","T","Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList")   
+    Call CheckControlExist(trvBOPJobLeftList,"BOP_ViewSQLList","T","Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trv_QueueTree")  
+    
+    If stopworkflow=False Then 
+         Exit Sub 
+    End If    
+    
+    'get the focused job name
+    '  aJobName=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_nav_BarControl1.BOP_trv_QueueTree.FocusedNode.GetDisplayText _
+    '  (Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_nav_BarControl1.BOP_trv_QueueTree.Columns.Item_2(0).FieldName.OleValue )
+    
+    aJobName=trvBOPJobLeftList.FocusedNode.GetDisplayText(trvBOPJobLeftList.Columns.Item_2(0).FieldName.OleValue)  
+    
+    'get The number of the SQL in SQL List
+    aSQLCount=grdBOPSQLList.DefaultView.RowCount
+    
+    If aSQLCount<>0 Then 
+        For i=0 To aSQLCount-1
+            grdBOPSQLList.DefaultView.DataController.CurrentControllerRow=i
+            Delay(1000)
+            aSQLClassName = grdBOPSQLList.DefaultView.DataController.GetCurrentRowValue_3(COLSQLClassification)
+            aSQLStatus    = grdBOPSQLList.DefaultView.DataController.GetCurrentRowValue_3(COLSQLStatus)
+            aSQLName      = grdBOPSQLList.DefaultView.DataController.GetCurrentRowValue_3(SSQLName)
+            
+            If aSQLStatus=34 Then
+            
+                'Check Original SQL Text       
+                Call tabBOPOSQLText.set_SelectedIndex(0) 
+
+                If CheckOriginalSQLText=True Then
+                    Call TCLog.logMsg("the Original Statements displayed correctly in [Original SQL Text] Page( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3) 
+                Else
+                    Call TCLog.logMsg("the Original Statements displayed incorrectly in [Original SQL Text] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)
+                End If 
+                
+                'Check Original SQL Plan
+                 Call tabBOPOSQLText.set_SelectedIndex(1)
+                If CheckOriginalSQLPlan=True Then
+                    Call TCLog.logMsg("the Original SQL Plan displayed correctly in [Original Execution plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Original SQL Plan displayed incorrectly in [Original Execution plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)
+                End If 
+                
+                'check Best Alternative SQL Text
+                Call tabBOPBASQLText.set_SelectedIndex(0)
+                If CheckBestAlternativeSQLText=True Then
+                    Call TCLog.logMsg("the Best Alternative SQL Text displayed correctly in [Best Alternative SQL Text] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Best Alternative SQL Text displayed incorrectly in [Best Alternative SQL Text] Page( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)   
+                End If 
+                
+                'check Best Alternative SQL Plan         
+                Call tabBOPBASQLText.set_SelectedIndex(1)        
+                If CheckBestAlternativeSQLPlan=True Then
+                    Call TCLog.logMsg("the Best Alternative SQL Plan displayed correctly in [Best Alternative Execution Plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Best Alternative SQL Plan displayed incorrectly in [Best Alternative Execution Plan] Page( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",4)
+                End If 
+            ElseIf (aSQLStatus=32 Or aSQLStatus=61 Or aSQLStatus=25 Or aSQLStatus=28 Or _
+                aSQLStatus=24 Or aSQLStatus=13)=True Then
+                
+                'Check Original SQL Text        
+                Call tabBOPOSQLText.set_SelectedIndex(0) 
+                If CheckOriginalSQLText=True Then
+                    Call TCLog.logMsg("the Original SQL Text displayed correctly in [Original SQL Text] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3) 
+                Else
+                    Call TCLog.logMsg("the Original SQL Text displayed incorrectly in [Original SQL Text] Page( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)
+                End If
+                                
+                'Check Original SQL Plan
+                Call tabBOPOSQLText.set_SelectedIndex(1)
+                If CheckOriginalSQLPlan=True Then
+                    Call TCLog.logMsg("the Original SQL Plan displayed correctly in [Original SQL Execution Plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Original SQL Plan displayed incorrectly in [Original SQL Execution Plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)
+                End If 
+                
+                'check Best Alternative SQL Text        
+                Call tabBOPBASQLText.set_SelectedIndex(0)
+                If CheckBestAlternativeSQLText=False  Then
+                    Call TCLog.logMsg("the Best Alternative SQL Text displayed correctly in [Best Alternative SQL Text] Page( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Best Alternative SQL Text displayed incorrectly in [Best Alternative SQL Text] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)   
+                End If 
+                
+                'check Best Alternative SQL Plan 
+                Call tabBOPBASQLText.set_SelectedIndex(1)
+                If CheckBestAlternativeSQLPlan=False Then
+                    Call TCLog.logMsg("the Best Alternative SQL Plan displayed correctly in [Best Alternative SQL Execution Plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Best Alternative SQL Plan displayed incorrectly in [Best Alternative SQL Execution Plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",4)
+                    Call LogPic("Result Like below:")
+                End If
+            Else 
+                'Check Original SQL Text
+                Call tabBOPOSQLText.set_SelectedIndex(0) 
+                If CheckOriginalSQLText=True Then
+                    Call TCLog.logMsg("the Original SQL Text displayed correctly in [Original SQL Text] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3) 
+                Else
+                    Call TCLog.logMsg("the Original SQL Text displayed incorrectly in [Original SQL Text] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)
+                End If
+                
+                'Check Original SQL Plan
+                Call tabBOPOSQLText.set_SelectedIndex(1)                
+                If CheckOriginalSQLPlan=False Then
+                    Call TCLog.logMsg("the Original SQL Plan displayed correctly in [Original SQL Execution Plan] Page( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Original SQL Plan displayed incorrectly in [Original SQL Execution Plan] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)
+                End If 
+                
+                'check Best Alternative SQL Text       
+                Call tabBOPBASQLText.set_SelectedIndex(0) 
+                If CheckBestAlternativeSQLText=False  Then
+                    Call TCLog.logMsg("the Best Alternative SQL Text displayed correctly in [Best Alternative SQL Text] Page( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Best Alternative SQL Text displayed incorrectly in [Best Alternative SQL Text] Page ( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",5)   
+                End If 
+                
+                'check Best Alternative SQL Plan 
+                Call tabBOPBASQLText.set_SelectedIndex(1) 
+                If CheckBestAlternativeSQLPlan=False Then
+                    Call TCLog.logMsg("the Best Alternative SQL Plan displayed correctly in [Best Alternative SQL Execution Plan]( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",3)
+                Else
+                    Call TCLog.logMsg("the Best Alternative SQL Plan displayed incorrectly in [Best Alternative SQL Execution Plan]( Job Name: " & DoString2(aJobName) & " SQLName: " & DoString2(aSQLName) & ")","BOP_ViewSQLList",4)
+                End If 
+            End If  
+        Next
+    Else
+        Call TCLog.logMsg("there is No SQL Exists For View(Job Name: " & DoString2(aJobName) & ")","BOP_ViewSQLList",5)
+    End If 
+    
+End Sub
+'*****************************************************************************************************************
+'Function----------- CheckOriginalSQLText
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------BOP_ViewSQLList
+'****************************************************************************************************************** 
+Function CheckOriginalSQLText
+    'Call BOP_MainWinCtlSet()
+    CheckOriginalSQLText=False
+    
+    If tabBOPOSQLText.Exists Then
+        If Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_OSQLText.DockTabStrip.OST_Tab_StripPage_1.OST_sye_SQLText.Text<>"" Then
+            CheckOriginalSQLText=True
+        Else
+            CheckOriginalSQLText=False
+        End If 
+    Else
+        Call TCLog.LogMsg("The Original SQL Text Panel does not exists" ,"CheckOriginalSQLText",5)
+    End If 
+    
+End Function
+'*****************************************************************************************************************
+'Function----------- CheckOriginalSQLPlan
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------BOP_ViewSQLList
+'****************************************************************************************************************** 
+Function CheckOriginalSQLPlan
+    'Call BOP_MainWinCtlSet()
+    CheckOriginalSQLPlan=False
+    IF tabBOPOSQLText.Exists = True Then
+        If CInt(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_OSQLText.DockTabStrip.OST_Tab_StripPage_2.OST_ucOriPlan.FExplainPlan.TotalCount) > 0 Then
+            CheckOriginalSQLPlan=True
+        Else
+            CheckOriginalSQLPlan=False
+        End If 
+    Else
+        Call TCLog.LogMsg("The Original SQL Plan Panel UI does not displayed" ,"CheckOriginalSQLPlan",5)
+    End If 
+    
+End Function
+'*****************************************************************************************************************
+'Function----------- CheckBestAlternativeSQLText
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------BOP_ViewSQLList
+'******************************************************************************************************************
+Function CheckBestAlternativeSQLText
+    'Call BOP_MainWinCtlSet()
+    CheckBestAlternativeSQLText=False
+    
+    If Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_twc_BASQLText.DockTabStrip.TabStripPage_1.Exists Then
+        If Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_twc_BASQLText.DockTabStrip.TabStripPage_1.BST_sye_SQLText.Text<>"" Then
+            CheckBestAlternativeSQLText=True
+        Else
+            CheckBestAlternativeSQLText=False
+        End If 
+    Else
+        Call TCLog.LogMsg("The Best Alternative SQL Text Panel does not exists" ,"CheckBestAlternativeSQLText",5)
+    End If 
+    
+End Function
+'*****************************************************************************************************************
+'Function----------- CheckBestAlternativeSQLPlan
+'Creator------------                   Date --------   
+'Modifier----------- Owen.Zeng         Date -------- 2013/9/3
+'Description-------- 
+'Call by------------BOP_ViewSQLList
+'******************************************************************************************************************
+Function CheckBestAlternativeSQLPlan
+    
+    'Call BOP_MainWinCtlSet()
+    CheckBestAlternativeSQLPlan=False
+    
+    If tabBOPBASQLText.Exists = True Then
+        If CInt(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_twc_BASQLText.DockTabStrip.OST_ucBestPlan.FExplainPlan.TotalCount) > 0 Then
+            CheckBestAlternativeSQLPlan=True
+        Else
+            CheckBestAlternativeSQLPlan=False
+        End If 
+    Else
+        Call TCLog.LogMsg("The Best Alternative SQL Plan Panel UI does not displayed" ,"CheckBestAlternativeSQLPlan",4)
+    End If 
+    
+End Function
+
+Sub BOP_MainView
+    
+    Dim i,k
+    
+    Call BOP_SelectBatchNode(4)
+    Delay(3000)
+    Call BOP_ViewBatchList(3)
+    'call BOP_SelectBatchNode(3)
+    For k=0 To Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trl_trvQueueTree.FocusedNode.Nodes.Count-1
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trl_trvQueueTree.MoveNext
+        Delay(3000)
+        Call BOP_ViewJobList(3) 
+        For i=0 To Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trl_trvQueueTree.FocusedNode.Nodes.Count-1
+            Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_trl_trvQueueTree.MoveNext
+            Delay(3000)
+            Call BOP_ViewSQLList
+        Next
+    Next 
+    
+End Sub
+
+Sub BOP_ModifyJobCondition(aDataID)
+    
+    Dim P1,aCRow
+    Dim aConnection,aEConnection,aSchema,aESchema
+    Set P1=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList
+    
+    aConnection=ObjSS.GetSqlServerCell("BOP_ModifyJob",aDataID,"I_Connection")
+    aEConnection=ObjSS.GetSqlServerCell("BOP_ModifyJob",aDataID,"I_ExecuteConnection")
+    aSchema= ObjSS.GetSqlServerCell("BOP_ModifyJob",aDataID,"I_Schema")
+    aESchema=ObjSS.GetSqlServerCell("BOP_ModifyJob",aDataID,"I_ExecuteSchema")
+    
+    aCRow=P1.DefaultView.DataController.get_CurrentControllerRow
+    
+    'Reset connection value
+    If aConnection<>"" Then 
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.ClickCell(aCRow,"Connection")
+        Delay(3000)
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.DevExpress_Utils_Win_IPopupControl_ClosePopup
+        If ReSetJobColumnValue(aConnection)=True Then
+            Call TCLog.LogMsg("ReSet Execution Connection column value sucessfully!" ,"BOP_ResetOptJobCondition",3)
+        Else
+            Call TCLog.LogMsg("ReSet Execution Connection column value Failed!" ,"BOP_ResetOptJobCondition",5)
+        End If   
+    End If 
+    'Reset Execution connection value
+    If aEConnection<>"" Then
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.ClickCell(aCRow,"Execution Connection")
+        Delay(3000)
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.DevExpress_Utils_Win_IPopupControl_ClosePopup
+        If ReSetJobColumnValue(aEConnection)=True Then
+            Call TCLog.LogMsg("ReSet Execution Connection column value sucessfully!" ,"BOP_ResetOptJobCondition",3)
+        Else
+            Call TCLog.LogMsg("ReSet Execution Connection column value Failed!" ,"BOP_ResetOptJobCondition",5)
+        End If 
+    End If 
+    'reset Schema value
+    If aSchema<>"" Then
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.ClickCell(aCRow,"Schema")
+        Delay(3000)
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.DevExpress_Utils_Win_IPopupControl_ClosePopup
+        If ReSetJobColumnValue(aSchema)=True Then
+            Call TCLog.LogMsg("ReSet Schema column value sucessfully!" ,"BOP_ResetOptJobCondition",3)
+        Else
+            Call TCLog.LogMsg("ReSet Schema column value Failed!" ,"BOP_ResetOptJobCondition",5)
+        End If
+    End If 
+    'reset execute schema value
+    If aESchema<>"" Then
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.ClickCell(aCRow,"Execution Schema")
+        Delay(3000)
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.DevExpress_Utils_Win_IPopupControl_ClosePopup
+        'call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.click
+        If ReSetJobColumnValue(aESchema)=True Then
+            Call TCLog.LogMsg("ReSet Execution Schema column value sucessfully!" ,"BOP_ResetOptJobCondition",3)
+        Else
+            Call TCLog.LogMsg("ReSet Execution Schema column value Failed!" ,"BOP_ResetOptJobCondition",5)
+        End If
+    End If
+    
+End Sub
+
+Function ReSetJobColumnValue(GroupName)
+    
+    Dim i
+    
+    i = 0
+    Do
+        Dim objRes
+        Set objRes=Runner.CallObjectMethodAsync(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection,"set_ItemIndex",i)
+        'judge the whether the error occur
+        If Aliases.QSOO_frm_MessageDialog.Exists=True Then
+            Call Aliases.QSOO_frm_MessageDialog.MSG_btn_Yes.click 
+        End If 
+        'compare the current name to the expectly name
+        If StrComp(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.Text,GroupName)=0 Then
+            ReSetJobColumnValue=True  
+            Exit Do
+        Else
+            ReSetJobColumnValue=False
+        End If
+        i = i + 1 
+    Loop While (Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.get_ItemIndex = i - 1)
+    
+End Function
+
+Sub BOP_ResetOptSQLCondition(aDataID)
+    
+    Dim P1,aCRow
+    Dim aBestAlSQL,aSchema,aESchema
+    Set P1=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList
+    
+    aBestAlSQL=ObjSS.GetSqlServerCell("BOP_ResetOptSQLCondition",aDataID,"I_BestAlternativeCriteria")
+    aSchema= ObjSS.GetSqlServerCell("BOP_ResetOptSQLCondition",aDataID,"I_Schema")
+    aESchema=ObjSS.GetSqlServerCell("BOP_ResetOptSQLCondition",aDataID,"I_ExecuteSchema")
+    
+    aCRow=P1.DefaultView.DataController.get_CurrentControllerRow
+    
+    'Reset Best alternative SQL Criteria value
+    If aBestAlSQL<>"" Then 
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.ClickCell(aCRow,"Best Alternative Criteria")
+        Call CheckQSOOPass
+        Delay(3000)
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.BOP_LookUpEdit_SQLList.DevExpress_Utils_Win_IPopupControl_ClosePopup
+        If BOP_ResetOptSQLCondition(aBestAlSQL)=True Then
+            Call TCLog.LogMsg("ReSet Best Alternative SQL Criteria column value sucessfully!" ,"BOP_ResetOptSQLCondition",3)
+        Else
+            Call TCLog.LogMsg("ReSet Best Alternative SQL Criteria column value Failed!" ,"BOP_ResetOptSQLCondition",5)
+        End If   
+    End If  
+    'reset Schema value
+    If aSchema<>"" Then
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.ClickCell(aCRow,"Schema")
+        Delay(3000)
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.BOP_LookUpEdit_SQLList.DevExpress_Utils_Win_IPopupControl_ClosePopup
+        If BOP_ResetOptSQLCondition(aSchema)=True Then
+            Call TCLog.LogMsg("ReSet Schema column value sucessfully!" ,"BOP_ResetOptSQLCondition",3)
+        Else
+            Call TCLog.LogMsg("ReSet Schema column value Failed!" ,"BOP_ResetOptSQLCondition",5)
+        End If
+    End If 
+    'reset execute schema value
+    If aESchema<>"" Then
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.ClickCell(aCRow,"Execution Schema")
+        Delay(3000)
+        Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.BOP_LookUpEdit_SQLList.DevExpress_Utils_Win_IPopupControl_ClosePopup
+        'call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_grd_JobList.BOP_LoopUpEdit_Connection.click
+        If BOP_ResetOptSQLCondition(aESchema)=True Then
+            Call TCLog.LogMsg("ReSet Execution Schema column value sucessfully!" ,"BOP_ResetOptSQLCondition",3)
+        Else
+            Call TCLog.LogMsg("ReSet Execution Schema column value Failed!" ,"BOP_ResetOptSQLCondition",5)
+        End If
+    End If
+    
+End Sub
+
+Function BOP_SelectBatchGroup(GroupName)
+    
+    Dim i
+    
+    i = 0
+    Do
+        Dim objRes
+        Set objRes=Runner.CallObjectMethodAsync(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.BOP_LookUpEdit_SQLList,"set_ItemIndex",i)
+        'judge the whether the error occur
+        If Aliases.QSOO_frm_MessageDialog.Exists=True Then
+            Call Aliases.QSOO_frm_MessageDialog.MSG_btn_Yes.click 
+            Call BOP_WaitForNotWorking("SQLList",COLSQLStatus)
+        End If 
+        'compare the current name to the expectly name
+        If StrComp(Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.BOP_LookUpEdit_SQLList.Text,GroupName)=0 Then
+            BOP_SelectBatchGroup=True  
+            Exit Do
+        Else
+            BOP_SelectBatchGroup=False
+        End If
+        i = i + 1 
+    Loop While (Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_grd_SQLList.BOP_LookUpEdit_SQLList.get_ItemIndex = i - 1)
+    
+End Function
+
+Sub BOP_SelectOptimizerGroup(aDataID)
+    
+    Delay(5000)
+    Dim i,aCBatchLab,aNBatchLab,aBatchGroup
+    Dim aGroupCount,aPlag
+    aCBatchLab=ObjSS.GetSqlServerCell("BOP_SelectOptimizerGroup",aDataID,"I_BatchGroupName")
+    If Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_nav_BarControl1.Exists Then
+        aGroupCount=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_nav_BarControl1.Controls.Owner.Groups.count
+        
+        Select Case aCBatchLab
+            Case "Start Using Optimizer"
+            aNBatchLab="navBarGroupStartUsingOptimizer"
+            Case "Single SQL Optimizer"
+            aNBatchLab="navBarGroupSingleSQLOptimizer"
+            Case "Batch Optimizer"
+            aNBatchLab="navBarGroupBatchOptimizer"
+        End Select
+        
+        For i=0 To aGroupCount-1
+            aBatchGroup= Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_nav_BarControl1.Controls.Owner.Groups.Item_2(i).Name
+            If StrComp(aBatchGroup,aNBatchLab)=0 Then
+                aPlag=aPlag+1
+                Call Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_nav_BarControl1.Groups.Item_2(i).set_Expanded(True)
+                Call TCLog.LogMsg("Sucess to Select Group :" & DoString2(aCBatchLab),"BOP_SelectOptimizerGroup",3)
+                Exit For
+            End If
+            
+        Next
+        If aPlag=0 Then
+            Call TCLog.LogMsg("Can't Find Group :" & DoString2(aCBatchLab),"BOP_SelectOptimizerGroup",5)
+        End If  
+    Else
+        Call TCLog.LogMsg("The Batch Job List does not exists,Can't Find Group","BOP_SelectOptimizerGroup",5)
+    End If 
+    Delay(50000)
+    
+End Sub  
+
+Sub BOP_TestforScalability_Open(aDataID)
+    
+    Dim P1
+    Dim StrTestType,i
+    
+    Set P1=Aliases.QSOO.QSOO_frm_Main.QSOO_pnl_panelBatchOptimizer.BOP_TWC_SQLList.BOP_XtraBars_DockedControl
+    
+    Call TCLog.LogMsg("Review BOP_TestforScalability_Open Common Step....","Open",10)
+    
+    StrTestType=ObjSS.GetSqlServerCell("BOP_TestforScalability_Open",aDataID,"I_OpenType")
+    '----
+    '----There are Three Test Scalability mode
+    '----
+    Select Case aqString.ToUpper(StrTestType)
+        '---Test for Scalability
+        Case "TEST FOR SCALABILITY CURRENT"
+        If(P1.Exists=True) Then
+            Call p1.RefreshMappingInfo
+            If ObjPOP.ClickToolBarButton(P1,"btnBMFCurrent")=True Then
+                Call TCLog.LogMsg("Success to click 'Test for scalability' Button in Main Tool Bar Button!","BOP_TestforScalability_Open",3)
+            Else
+                Call TCLog.LogMsg("The Main Tool Bar Is Disabled!","BOP_TestforScalability_Open",5)
+                stopWorkflow=False
+            End If
+        Else
+            Call TCLog.LogMsg("The Main Tool Bar does not exists!","BOP_TestforScalability_Open",5)
+            stopWorkflow=False
+            Call TCLog.LogMsg("","Open",11)
+            Exit Sub
+        End If
+        '----Test All for Scalability
+        Case "TEST FOR SCALABILITY ALL"
+        If(P1.Exists=True) Then
+            Call p1.RefreshMappingInfo
+            '          if ObjPOP.ClickToolBarButton(P1,"btnBMFAll")=True Then
+            If ObjPOP.ClickToolBarButton(P1,"btn_BMFCurrentToolbar")=True Then
+                Call CheckQSOOPass
+                Call TCLog.LogMsg("Success to click 'Test All for scalability' Button in Main Tool Bar Button!","BOP_TestforScalability_Open",3)
+            Else
+                Call TCLog.LogMsg("The Main Tool Bar Is Disabled!","BOP_TestforScalability_Open",5)
+                stopWorkflow=False
+                Call TCLog.LogMsg("","Open",11)
+                Exit Sub
+            End If
+        Else
+            Call TCLog.LogMsg("The Main Tool Bar does not exists!","BOP_TestforScalability_Open",5)
+            stopWorkflow=False
+            Call TCLog.LogMsg("","Open",11)
+            Exit Sub
+        End If
+        '----Test selected for Scalability
+        Case "TEST FOR SCALABILITY SELECTED"
+        If(P1.Exists=True) Then
+            Call p1.RefreshMappingInfo
+            If ObjPOP.ClickToolBarButton(P1,"btnBMFSelected")=True Then
+                Call TCLog.LogMsg("Success to  click 'Test for scalability Selected' Button in Main Tool Bar Button To Generate index!","BOP_TestforScalability_Open",3)
+            Else
+                Call TCLog.LogMsg("The Main Tool Bar Is Disabled!","BOP_TestforScalability_Open",5)
+                stopWorkflow=False
+                Call TCLog.LogMsg("","Open",11)
+                Exit Sub
+            End If
+        Else
+            Call TCLog.LogMsg("The Main Tool Bar does not exists!","BOP_TestforScalability_Open",5)
+            stopWorkflow=False
+            Call TCLog.LogMsg("","Open",11)
+            Exit Sub
+        End If
+    End Select
+    Call BOP_SendToBMF()
+    '----
+    '----verify Test for scalability Options window displayed
+    '----
+    Do
+        If i<>100 Then       
+            Delay(1000)
+            i=i+1
+        Else
+            Call TCLog.LogMsg("Delay Time Up 5 Minutes,Open BFM Options window Failed!","BOP_TestforScalability_Open",5)
+            Exit Do           
+        End If
+    Loop While(Exists(frmBOPToBMFOpt)=False)
+    
+    
+    If Exists(frmBOPToBMFOpt)=True Then
+        Call TCLog.LogMsg("Open [Test for Scalability Options] window Successful!","BOP_TestforScalability_Open",3)
+    ElseIf Exists(Aliases.QSOO.CCON_frm_CheckProfiles) Then
+        Call TCLog.LogMsg("[Check Connection] window Opened","BOP_TestforScalability_Open",3)
+    ElseIf Exists(Aliases.QSOO.QSOO_Tfrm_AuthKey1) Then
+        Call TCLog.LogMsg("[Quest SQL Optimizer for Oracle Licensing] window Opened","BOP_TestforScalability_Open",3)
+    Else
+        Call TCLog.LogMsg("Open [Test for Scalability Options] window Failed!","BOP_TestforScalability_Open",5)
+        stopWorkflow=False
+    End If 
+    
+    Call TCLog.LogMsg("------------","Open",11)
+    
+End Sub
+
+Sub BOP_TestforScalability_Settings(aDataID)
+    
+    Dim StrOrgSQL,StrBestAltSQL,StrTETime,StrFRETime,StrAdvOption,StrMaxVirUser,StrMinVirUser
+    Dim StrStep,StrDisModel,StrLatDuration,StrExecuteType,StrEDuration,StrENumber    
+    
+    StrOrgSQL=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_OriginalSQL")
+    StrBestAltSQL=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_BestAltSQL")
+    StrTETime=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_TotalTimeCriteria")
+    StrFRETime=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_FirstRowTimeCriteria")
+    StrAdvOption=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_AdvancedOptions")
+    StrMaxVirUser=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_MaxVirtualUsers")
+    StrMinVirUser=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_MinVirtualUsers")
+    StrStep=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_StepValue")
+    StrDisModel=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_DistributionModel") 
+    StrLatDuration=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_LatencyDuration")
+    StrExecuteType=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_ExecuteType")
+    StrEDuration=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_EDuration")
+    StrENumber=ObjSS.GetSqlServerCell("BOP_TestforScalability_Settings",aDataID,"I_ENumberofTimes")
+    Call BOP_SendToBMF()
+    '----Original SQL Checkbox
+    If chkBOPToBMFOri.Enabled Then
+        If StrComp(StrOrgSQL,"True")=0 Then 
+            Call chkBOPToBMFOri.set_Checked(True)
+            Call TCLog.LogMsg("Checked [Original SQL] checkbox!","BOP_TestforScalability_Settings",3)
+        ElseIf StrComp(StrOrgSQL,"False")=0 Then 
+            Call chkBOPToBMFOri.set_Checked(False)
+            Call TCLog.LogMsg("Unchecked [Original SQL] checkbox!","BOP_TestforScalability_Settings",3)
+        Else
+            Call TCLog.LogMsg("Use Default Settings for [Original SQL] Option!","BOP_TestforScalability_Settings",3) 
+        End If
+    Else
+        Call TCLog.LogMsg("The [Original SQL] checkbox is disabled!","BOP_TestforScalability_Settings",5) 
+    End If
+    '----SQL Statement selected by the best alternative criteria setting Checkbox
+    If chkBOPToBMFByBest.Enabled Then
+        If StrComp(StrBestAltSQL,"True")=0 Then 
+            Call chkBOPToBMFByBest.set_Checked(True)
+            Call TCLog.LogMsg("Checked [SQL Statement selected by the best alternative criteria setting] checkbox!","BOP_TestforScalability_Settings",3)
+        ElseIf StrComp(StrBestAltSQL,"False")=0 Then 
+            Call chkBOPToBMFByBest.set_Checked(False)
+            Call TCLog.LogMsg("Unchecked [SQL Statement selected by the best alternative criteria setting] checkbox!","BOP_TestforScalability_Settings",3)
+        Else
+            Call TCLog.LogMsg("Use Default Settings for [SQL Statement selected by the best alternative criteria setting] Option!","BOP_TestforScalability_Settings",3) 
+        End If
+    Else
+        Call TCLog.LogMsg("The [SQL Statement selected by the best alternative criteria setting] checkbox is disabled!","BOP_TestforScalability_Settings",5) 
+    End If
+    '----SQL Alternatives whose Total Elapsed Time is faster then the original SQL Checkbox
+    If chkBOPToBMFTotalElapsedTime.Enabled Then
+        If StrComp(StrTETime,"All faster SQL")=0 Then 
+            Call chkBOPToBMFTotalElapsedTimeAll.set_Checked(True)
+            Call TCLog.LogMsg("Selected [All faster SQL] for [SQL Statement selected by the best alternative criteria setting] Criteria!","BOP_TestforScalability_Settings",3)
+        ElseIf StrTETime<>"" Then
+            Call chkBOPToBMFTotalElapsedTimeTopN.set_Checked(True)
+            Call TCLog.LogMsg("Selected [Top N SQL] for [SQL Statement selected by the best alternative criteria setting] Criteria!","BOP_TestforScalability_Settings",3)
+            Call frmBOPToBMFOpt.BOP_spe_TotalElapsedTime.set_EditValue(StrTETime)
+            Call TCLog.LogMsg("Set [Top N SQL] Value: " & DoString2(StrTETime),"BOP_TestforScalability_Settings",3)
+        Else
+            Call TCLog.LogMsg("Use Default Settings for [SQL Alternatives whose Total Elapsed Time is faster then the original SQL] Option!","BOP_TestforScalability_Settings",3) 
+        End If
+    Else
+        Call TCLog.LogMsg("The [SQL Alternatives whose Total Elapsed Time is faster then the original SQL] checkbox is disabled!","BOP_TestforScalability_Settings",5) 
+    End If
+    '----SQL Alternatives whose First Row Elapsed Time is faster then the original SQL Checkbox
+    If chkBOPToBMFFirstElapsedTime.Enabled Then
+        If StrComp(StrFRETime,"All faster SQL")=0 Then 
+            Call chkBOPToBMFFirstElapsedTimeAll.set_Checked(True)
+            Call TCLog.LogMsg("Selected [All faster SQL] for [SQL Alternatives whose First Row Elapsed Time is faster then the original SQL] Criteria!","BOP_TestforScalability_Settings",3)
+        ElseIf StrFRETime<>"" Then
+            Call chkBOPToBMFFirstElapsedTimeTopN.set_Checked(True)
+            Call TCLog.LogMsg("Selected [Top N SQL] for [SQL Alternatives whose First Row Elapsed Time is faster then the original SQL] Criteria!","BOP_TestforScalability_Settings",3)
+            Call speBOPToBMFFirstElapsedTime.set_EditValue(StrFRETime)
+            Call TCLog.LogMsg("Set [Top N SQL] Value: " & DoString2(StrFRETime),"BOP_TestforScalability_Settings",3)
+        Else
+            Call TCLog.LogMsg("Use Default Settings for [SQL Alternatives whose First Row Elapsed Time is faster then the original SQL] Option!","BOP_TestforScalability_Settings",3) 
+        End If
+    Else
+        Call TCLog.LogMsg("The [SQL Alternatives whose First Row Elapsed Time is faster then the original SQL] checkbox is disabled!","BOP_TestforScalability_Settings",5) 
+    End If
+    '----Advanced Options
+    If StrComp(StrAdvOption,"True")=0 Then
+        If hypBOPToBMFAdvOpt.Enabled Then
+            Call hypBOPToBMFAdvOpt.click 
+            Call TCLog.LogMsg("Click [Show Advanced Options] button!","BOP_TestforScalability_Settings",3)
+            If grpBOPToBMFContent.Enabled Then
+                Call TCLog.LogMsg("Success to Show Advanced Options!","BOP_TestforScalability_Settings",3)
+            Else
+                Call TCLog.LogMsg("Show Advanced Options Failed!","BOP_TestforScalability_Settings",5)
+                Exit Sub
+            End If  
+        Else
+            Call TCLog.LogMsg("The [Show Advanced Options] Button is disabled!","BOP_TestforScalability_Settings",5)
+            Exit Sub
+        End If
+        '----Minimum number of virtual users option
+        If speBOPToBMFMinUserLoad.Enabled Then
+            If StrMinVirUser<>"" Then
+                Call speBOPToBMFMinUserLoad.set_EditValue(StrMinVirUser)
+                Call TCLog.LogMsg("Set [Minimum number of virtual users] Value: " & DoString2(StrMinVirUser),"BOP_TestforScalability_Settings",3)
+            Else
+                Call TCLog.LogMsg("Use Default Settings for [Minimum number of virtual users] Option!","BOP_TestforScalability_Settings",3)
+            End If
+        Else
+            Call TCLog.LogMsg("the [Minimum number of virtual users] Editbox is disabeld","BOP_TestforScalability_Settings",5)
+        End If
+        '----Maximum number of virtual users option
+        If speBOPToBMFMaxUserLoad.Enabled Then
+            If StrMaxVirUser<>"" Then
+                Call speBOPToBMFMaxUserLoad.set_EditValue(StrMaxVirUser)
+                Call TCLog.LogMsg("Set [Maximum number of virtual users] Value: " & DoString2(StrMaxVirUser),"BOP_TestforScalability_Settings",3)
+            Else
+                Call TCLog.LogMsg("Use Default Settings for [Maximum number of virtual users] Option!","BOP_TestforScalability_Settings",3)
+            End If
+        Else
+            Call TCLog.LogMsg("the [Maximum number of virtual users] Editbox is disabeld","BOP_TestforScalability_Settings",5)
+        End If
+        '----Step Value for virtual users option
+        If speBOPToBMFStepUserLoad.Enabled Then
+            If StrStep<>"" Then
+                Call speBOPToBMFStepUserLoad.set_EditValue(StrStep)
+                Call TCLog.LogMsg("Set [Step Value for virtual users] Value: " & DoString2(StrStep),"BOP_TestforScalability_Settings",3)
+            Else
+                Call TCLog.LogMsg("Use Default Settings for [Step Value for virtual users] Option!","BOP_TestforScalability_Settings",3)
+            End If
+        Else
+            Call TCLog.LogMsg("the [Step Value for virtual users] Editbox is disabeld","BOP_TestforScalability_Settings",5)
+        End If
+        '----Distribution Model option
+        If cbeBOPToBMFLatencyModel.Enabled Then
+            If StrDisModel<>"" Then
+                Call cbeBOPToBMFLatencyModel.set_SelectedItem(StrDisModel)
+                Call TCLog.LogMsg("Set [Distribution Model] Value: " & DoString2(StrDisModel),"BOP_TestforScalability_Settings",3)
+            Else
+                Call TCLog.LogMsg("Use Default Settings for [Distribution Model] Option!","BOP_TestforScalability_Settings",3)
+            End If
+        Else
+            Call TCLog.LogMsg("the [Distribution Model] Editbox is disabeld","BOP_TestforScalability_Settings",5)
+        End If
+        '----Duration(milliseconds) option
+        If speBOPToBMFThinkTime.Enabled Then
+            If StrLatDuration<>"" Then
+                Call speBOPToBMFThinkTime.set_EditValue(StrLatDuration)
+                Call TCLog.LogMsg("Set [Duration(milliseconds)] Value: " & DoString2(StrLatDuration),"BOP_TestforScalability_Settings",3)
+            Else
+                Call TCLog.LogMsg("Use Default Settings for [Duration(milliseconds)] Option!","BOP_TestforScalability_Settings",3)
+            End If
+        Else
+            Call TCLog.LogMsg("the [Duration(milliseconds)] Editbox is disabeld","BOP_TestforScalability_Settings",5)
+        End If
+        '----Execute each SQL statement by option
+        If StrExecuteType="Duration" Then
+'            Call frmBOPToBMFOpt.BOP_rad_Duration.Click
+'            Call TCLog.LogMsg("Selected [Duration(seconds)] Option for [Execute for each SQL Statement by]","BOP_TestforScalability_Settings",3)
+'            If StrEDuration<>"" Then
+'                Call frmBOPToBMFOpt.BOP_spe_ExeDuration.set_EditValue(StrLatDuration)
+'                Call TCLog.LogMsg("Set [Duration(seconds)] Value: " & DoString2(StrLatDuration),"BOP_TestforScalability_Settings",3)
+'            Else
+'                Call TCLog.LogMsg("Use Default Settings for [Duration(seconds)] Option!","BOP_TestforScalability_Settings",3)
+'            End If
+        ElseIf StrExecuteType="Times" Then
+            Call radBOPToBMFNumOfTime.click 
+            Call TCLog.LogMsg("Selected [Number of times] Option for [Execute for each SQL Statement by]","BOP_TestforScalability_Settings",3)
+            If StrENumber<>"" Then
+                Call speBOPToBMFNumOfTime.set_EditValue(StrENumber)
+                Call TCLog.LogMsg("Set [Number of times] Value: " & DoString2(StrENumber),"BOP_TestforScalability_Settings",3)
+            Else
+                Call TCLog.LogMsg("Use Default Settings for [Number of times] Option!","BOP_TestforScalability_Settings",3)
+            End If
+        Else
+            Call TCLog.LogMsg("Use Default Settings for [Execute each SQL Statement by] Option!","BOP_TestforScalability_Settings",3)
+        End If
+        
+    Else
+        Call TCLog.LogMsg("Not Open [Show Advanced Options]!","BOP_TestforScalability_Settings",3)
+    End If
+    
+    
+End Sub
+
+Sub BOP_TestforScalability_Close(aDataID)
+    
+    Dim StrTestType,i
+    
+    StrTestType=ObjSS.GetSqlServerCell("BOP_TestforScalability_Close",aDataID,"I_CloseType")
+    Call BOP_SendToBMF()
+    If Exists(frmBOPToBMFOpt)=False Then
+        Call TCLog.LogMsg("the [Test for Scalability Options] window does not exists!","BOP_TestforScalability_Closed",5)
+        stopWorkflow=False
+        Exit Sub
+    End If 
+    
+    Select Case aqString.ToUpper(StrTestType)
+        '---click ok
+        Case "OK"
+        Call frmBOPToBMFOpt.RefreshMappingInfo
+        If btnBOPToBMFOK.Enabled Then
+            Call btnBOPToBMFOK.click 
+            Call TCLog.LogMsg("Click [OK] Button!","BOP_TestforScalability_Closed",3)
+        Else
+            Call TCLog.LogMsg("the [OK] Button is diabled!","BOP_TestforScalability_Closed",5)
+            stopWorkflow=False
+            Exit Sub
+        End If      
+        Case "CANCEL"
+        Call frmBOPToBMFOpt.RefreshMappingInfo
+        If btnBOPToBMFCancel.Enabled Then
+            Call btnBOPToBMFCancel.click 
+            Call TCLog.LogMsg("Click [Cancel] Button!","BOP_TestforScalability_Closed",3)
+        Else
+            Call TCLog.LogMsg("the [Cancel] Button is diabled!","BOP_TestforScalability_Closed",5)
+            stopWorkflow=False
+            Exit Sub
+        End If
+    End Select
+    
+    Delay(30000)
+    
+    If Exists(frmBOPToBMFOpt)=True Then
+        Call TCLog.LogMsg("Close [Test for Scalability Options] window failed!","BOP_TestforScalability_Closed",5)
+        stopWorkflow=False
+        Exit Sub
+    Else
+        Call TCLog.LogMsg("Close [Test for Scalability Options] window successed!","BOP_TestforScalability_Closed",3)
+    End If
+    
+    Delay(30000)
+    
+    If Sys.WaitProcess("BFactory", 3000).Exists Then
+        Call TCLog.LogMsg("Success to Opened the BFM Program!!","BOP_TestforScalability_Closed",3)
+        Call Sys.Process("BFactory").Terminate
+        Call TCLog.LogMsg("Closed the BMF Program!","BOP_TestforScalability_Closed",3)
+    Else
+        Call TCLog.LogMsg("Can not open BMF.","BOP_TestforScalability_Closed",5)  
+    End If
+    If Sys.WaitProcess("Agent", 3000).Exists Then
+        Call TCLog.LogMsg("Success to Opened the Agent Program!!","BOP_TestforScalability_Closed",3)
+        Call Sys.Process("Agent").Terminate
+        Call TCLog.LogMsg("Closed the Agent Program!","BOP_TestforScalability_Closed",3)
+    End If
+    
+End Sub
+
+
+Sub Test
+'BOP_SelectBatchNode(3)
+'BOP_SelectJob(2)
+BOP_GenerateOptScript(2)
+End Sub
+
+
+
+
+
+
