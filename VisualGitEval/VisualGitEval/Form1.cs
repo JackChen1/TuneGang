@@ -26,6 +26,8 @@ namespace VisualGitEval
         {
             MessageBox.Show("Whatever");
             MessageBox.Show("Kill again");
+            MessageBox.Show("Kill again");
         }
+
     }
 }
