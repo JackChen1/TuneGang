@@ -24,7 +24,7 @@ namespace VisualGitEval
 
         private void button1_Click(object sender, EventArgs e)
         {
-            
+            MessageBox.Show("Whatever");
             MessageBox.Show("Kill again");
         }
     }
